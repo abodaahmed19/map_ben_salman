@@ -1,0 +1,221 @@
+﻿HTML:\n
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>محور طريق محمد بن سلمان — حالة الجسور</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+<div id="app" v-cloak>
+  <header class="topbar">
+    <div class="brand-lockup">
+      <img src="/static/img/logo.png" alt="أمانة العاصمة المقدسة" />
+      <div class="divider"></div>
+      <div class="dept">إدارة أصول النقل<small>والبنية التحتية</small></div>
+    </div>
+    <div class="title-block">
+      <h1>محور طريق الأمير محمد بن سلمان</h1>
+    </div>
+    <div class="spacer"></div>
+  </header>
+
+  <div id="map"></div>
+  <div class="loading" v-if="loading">جارٍ تحميل البيانات…</div>
+
+
+  <div class="modal-overlay" v-if="selected" @click.self="closePanel">
+   <div class="modal">
+    <div class="panel-head">
+      <button class="close" @click="closePanel">✕</button>
+      <h2>{{ selected.name }}</h2>
+      <div class="meta">
+        <span class="status-badge" :class="'status-'+selected.status">{{ selected.status_display }}</span>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="kv">
+        <div class="cell"><span>عدد الحالات</span><b>{{ selected.defects.length }}</b></div>
+        <div class="cell"><span>الحالات المفتوحة</span><b>{{ selected.open_count }}</b></div>
+      </div>
+      <div class="section-title">الحالات المرصودة <span class="count">{{ selected.defects.length }}</span></div>
+      <div v-if="!selected.defects.length" class="empty">لا توجد حالات مسجّلة على هذا الجسر ✅</div>
+      <div v-for="d in selected.defects" :key="d.id" class="defect" :class="'st-'+d.status" @click="openImages(d)">
+        <div class="row">
+          <h3>{{ d.title }}</h3>
+          <span class="status-badge" :class="'status-'+d.status">{{ d.status_display }}</span>
+        </div>
+        <p v-if="d.description">{{ d.description }}</p>
+        <div class="metrics">
+          <div class="metric"><span>الطول</span><b>{{ d.length_m }} م</b></div>
+          <div class="metric"><span>العرض</span><b>{{ d.width_m }} م</b></div>
+          <div class="metric"><span>المساحة</span><b>{{ d.area_m2 }} م²</b></div>
+          <div class="metric"><span>العدد</span><b>{{ d.count }}</b></div>
+        </div>
+        <div class="action-line">
+          <button class="btn small">عرض الصور</button>
+          <span class="note">{{ d.images.length }} صورة</span>
+        </div>
+      </div>
+    </div>
+   </div>
+  </div>
+
+  <div class="lightbox" v-if="lightbox" @click.self="closeLightbox">
+    <div class="lb-content">
+      <button class="lb-close" @click="closeLightbox">✕</button>
+      <div class="lb-top">
+        <h3>{{ lightbox.defect.title }}</h3>
+        <span class="status-badge" :class="'status-'+lightbox.defect.status">{{ lightbox.defect.status_display }}</span>
+      </div>
+      <div v-if="lightbox.defect.images.length" class="lb-slider">
+        <button v-if="lightbox.defect.images.length > 1" class="nav prev" @click.stop="prevImage">‹</button>
+        <img :src="currentImage.image" :alt="currentImage.caption || lightbox.defect.title" />
+        <button v-if="lightbox.defect.images.length > 1" class="nav next" @click.stop="nextImage">›</button>
+      </div>
+      <div v-else class="empty" style="margin:0">لا توجد صور لهذه الحالة.</div>
+      <div v-if="lightbox.defect.images.length" class="lb-caption">
+        {{ currentImage.caption || `صورة ${lightbox.index + 1} من ${lightbox.defect.images.length}` }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="/static/js/viewer.js"></script>
+</body>
+</html>
+
+\n\n---JS---\n/* ====== Ø¹Ø§Ø±Ø¶ ÙØ­ÙØ± Ø·Ø±ÙÙ ÙØ­ÙØ¯ Ø¨Ù Ø³ÙÙØ§Ù (Vue 3) ====== */
+const { createApp } = Vue;
+
+const CENTER = [21.4275, 39.8235];
+const ZOOM = 14;
+
+function baseLayers() {
+  const satellite = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    { maxZoom: 19, attribution: "Esri" });
+  const streets = L.tileLayer(
+    "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    { maxZoom: 20, attribution: "Â© OpenStreetMap, Â© CARTO" });
+  return { satellite, streets };
+}
+
+function bridgeIcon(color, selected) {
+  return L.divIcon({
+    className: "",
+    html: `<div class="bridge-marker ${selected ? "selected" : ""}" style="--bc:${color}">ð</div>`,
+    iconSize: [38, 38], iconAnchor: [19, 38],
+  });
+}
+
+createApp({
+  data() {
+    return { bridges: [], selected: null, lightbox: null, loading: true,
+             map: null, markers: {}, slideTimer: null };
+  },
+  computed: {
+    openCount() { return this.bridges.reduce((s, b) => s + b.open_count, 0); },
+    critCount() { return this.bridges.filter(b => b.status === "critical").length; },
+    currentImage() {
+      return this.lightbox && this.lightbox.defect.images[this.lightbox.index];
+    },
+  },
+  async mounted() {
+    this.initMap();
+    await this.load();
+    window.addEventListener("keydown", e => {
+      if (e.key !== "Escape") return;
+      if (this.lightbox) this.closeLightbox();
+      else if (this.selected) this.closePanel();
+    });
+  },
+  methods: {
+    initMap() {
+      this.map = L.map("map", { zoomControl: false }).setView(CENTER, ZOOM);
+      L.control.zoom({ position: "topleft" }).addTo(this.map);
+      const { satellite, streets } = baseLayers();
+      satellite.addTo(this.map);
+      L.control.layers({ "ÙÙØ± ØµÙØ§Ø¹Ù": satellite, "Ø®Ø±ÙØ·Ø© Ø´ÙØ§Ø±Ø¹": streets }, {}, { position: "topleft" }).addTo(this.map);
+    },
+    async load() {
+      try {
+        const res = await fetch("/api/bridges/");
+        this.bridges = await res.json();
+        this.render();
+      } finally { this.loading = false; }
+    },
+    render() {
+      const bounds = [];
+      this.bridges.forEach(b => {
+        if (b.lat == null || b.lng == null) return;
+        const m = L.marker([b.lat, b.lng], { icon: bridgeIcon(b.color, false) }).addTo(this.map);
+        m.bindTooltip(b.name, { permanent: true, direction: "top", className: "bridge-label", offset: [0, -44] });
+        m.on("click", () => this.openBridge(b.id));
+        this.markers[b.id] = m;
+        bounds.push([b.lat, b.lng]);
+      });
+      if (bounds.length) this.map.fitBounds(bounds, { padding: [80, 90], maxZoom: 16 });
+      setTimeout(() => this.map.invalidateSize(), 200);
+      window.addEventListener("resize", () => this.map.invalidateSize());
+    },
+    openBridge(id) {
+      this.selected = this.bridges.find(b => b.id === id) || null;
+      Object.entries(this.markers).forEach(([bid, m]) => {
+        const b = this.bridges.find(x => x.id === +bid);
+        m.setIcon(bridgeIcon(b.color, +bid === id));
+      });
+      if (this.selected) this.map.panTo([this.selected.lat, this.selected.lng]);
+    },
+    closePanel() {
+      this.selected = null;
+      Object.entries(this.markers).forEach(([bid, m]) => {
+        const b = this.bridges.find(x => x.id === +bid);
+        m.setIcon(bridgeIcon(b.color, false));
+      });
+    },
+    openImages(defect) {
+      if (!defect || !defect.images || !defect.images.length) return;
+      this.lightbox = { defect, index: 0 };
+      this.startAutoSlide();
+    },
+    prevImage() {
+      if (!this.lightbox) return;
+      const count = this.lightbox.defect.images.length;
+      this.lightbox.index = (this.lightbox.index + count - 1) % count;
+      this.resetAutoSlide();
+    },
+    nextImage() {
+      if (!this.lightbox) return;
+      const count = this.lightbox.defect.images.length;
+      this.lightbox.index = (this.lightbox.index + 1) % count;
+      this.resetAutoSlide();
+    },
+    startAutoSlide() {
+      this.clearAutoSlide();
+      if (!this.lightbox || this.lightbox.defect.images.length < 2) return;
+      this.slideTimer = setInterval(() => {
+        if (!this.lightbox) return;
+        const count = this.lightbox.defect.images.length;
+        this.lightbox.index = (this.lightbox.index + 1) % count;
+      }, 2800);
+    },
+    resetAutoSlide() {
+      this.startAutoSlide();
+    },
+    clearAutoSlide() {
+      if (this.slideTimer) { clearInterval(this.slideTimer); this.slideTimer = null; }
+    },
+    closeLightbox() {
+      this.clearAutoSlide();
+      this.lightbox = null;
+    },
+  },
+}).mount("#app");
+

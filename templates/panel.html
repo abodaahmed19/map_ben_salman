@@ -1,0 +1,128 @@
+{% verbatim %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>محور طريق الأمير محمد بن سلمان</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/css/styles.css" />
+</head>
+<body>
+<div id="app" v-cloak>
+  <header class="topbar">
+    <div class="brand-lockup">
+      <img src="/static/img/logo.png" alt="أمانة العاصمة المقدسة" />
+      <div class="divider"></div>
+      <div class="dept">إدارة أصول النقل والبنية التحتية</div>
+    </div>
+    <div class="title-block">
+      <h1>محور طريق الأمير محمد بن سلمان</h1>
+    </div>
+    <div class="spacer"></div>
+    <a class="btn mint" href="/" target="_blank">👁️ معاينة العرض</a>
+  </header>
+
+  <div class="admin-shell">
+    <div class="admin-side">
+      <div class="hint">
+        <b>طريقة العمل:</b> اضغط «إضافة جسر» ثم انقر على الخريطة لتحديد موقع الجسر. اكتب اسمه وحالته، وأضف الحالات وبياناتها وصورها — كل التعديلات تُحفظ مباشرة في قاعدة البيانات وتظهر فورًا في صفحة العرض.
+      </div>
+
+      <div class="card">
+        <h3>🌉 الجسور</h3>
+        <div v-if="!bridges.length" class="empty">لا توجد جسور بعد — أضف أول جسر.</div>
+        <div v-for="b in bridges" :key="b.id" class="list-item" :class="{active: sel && sel.id===b.id}" @click="selectBridge(b.id)">
+          <div class="swatch" :style="{background: statusColor(b.status)}"></div>
+          <div class="info"><b>{{ b.name }}</b><span>{{ b.defects.length }} حالة · {{ b.status_display }}</span></div>
+          <button class="del" @click.stop="deleteBridge(b)">🗑️</button>
+        </div>
+        <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="startPlaceBridge()">➕ إضافة جسر</button>
+      </div>
+
+      <div class="card" v-if="sel">
+        <h3>✏️ بيانات الجسر</h3>
+        <div class="field"><label>اسم الجسر</label><input v-model="sel.name" @change="saveBridge" /></div>
+        <div class="field"><label>الحالة</label>
+          <select v-model="sel.status" @change="saveBridge">
+            <option value="critical">حرج</option>
+            <option value="operational">ضعيف</option>
+            <option value="maintenance">مقبول</option>
+            <option value="good">جيد</option>
+          </select>
+        </div>
+        <div class="field"><label>الإحداثيات</label>
+          <input :value="sel.lat.toFixed(5) + ' , ' + sel.lng.toFixed(5)" readonly />
+        </div>
+        <div class="field-row">
+          <button class="btn" style="justify-content:center" @click="startMoveBridge()">📍 تحريك الموقع</button>
+          <button class="btn danger" style="justify-content:center" @click="deleteBridge(sel)">🗑️ حذف الجسر</button>
+        </div>
+      </div>
+
+      <div class="card" v-if="sel">
+        <h3>⚠️ الحالات</h3>
+        <div v-if="!sel.defects.length" class="empty">لا توجد سجلات — أضف حالة.</div>
+        <div v-for="d in sel.defects" :key="d.id" class="list-item" @click="editDefect(d)">
+          <div class="swatch" :style="{background: statusColor(sel.status)}"></div>
+          <div class="info"><b>{{ d.title }}</b><span>{{ d.status_display }} · {{ d.images.length }} صورة</span></div>
+          <button class="del" @click.stop="deleteDefect(d)">🗑️</button>
+        </div>
+        <button class="btn" style="width:100%;justify-content:center;margin-top:6px" @click="newDefect">➕ إضافة حالة</button>
+      </div>
+
+      <div class="card" v-if="draft">
+        <h3>🔧 {{ draft.id ? 'تعديل الحالة' : 'حالة جديدة' }}</h3>
+        <div class="field"><label>اسم الحالة</label><input v-model="draft.title" /></div>
+        <div class="field"><label>الحالة</label>
+          <select v-model="draft.status">
+            <option value="open">مفتوح</option>
+            <option value="in_progress">جاري المعالجة</option>
+            <option value="resolved">منتهى</option>
+          </select>
+        </div>
+        <div class="field"><label>الوصف</label><textarea v-model="draft.description"></textarea></div>
+        <div class="field-row">
+          <div class="field"><label>الطول (م)</label><input type="number" step="any" v-model.number="draft.length_m" /></div>
+          <div class="field"><label>العرض (م)</label><input type="number" step="any" v-model.number="draft.width_m" /></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>المساحة (م²)</label><input type="number" step="any" v-model.number="draft.area_m2" /></div>
+          <div class="field"><label>العدد</label><input type="number" v-model.number="draft.count" /></div>
+        </div>
+        <div class="field">
+          <label>الصور</label>
+          <div class="thumb-row">
+            <div class="thumb" v-for="im in draft.images" :key="im.id">
+              <img :src="im.image" /><button class="x" @click="deleteImage(im)">✕</button>
+            </div>
+          </div>
+          <button class="btn" style="width:100%;justify-content:center;margin-top:8px" @click="$refs.file.click()" :disabled="!draft.id">🖼️ رفع صور {{ draft.id ? '' : '(احفظ الحالة أولًا)' }}</button>
+          <input ref="file" type="file" accept="image/*" multiple hidden @change="uploadImages" />
+        </div>
+        <div class="field-row" style="margin-top:6px">
+          <button class="btn primary" style="justify-content:center" @click="saveDefect">💾 حفظ الحالة</button>
+          <button class="btn danger" style="justify-content:center" @click="cancelDefect">✕ إلغاء</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="admin-map">
+      <div class="draw-toolbar" v-if="placingBridge || movingBridge">
+        <span class="draw-hint">{{ placingBridge ? 'انقر لتحديد موقع الجسر' : 'انقر لتحريك الجسر' }}</span>
+        <button class="btn danger" @click="placingBridge=false; movingBridge=false">✕ إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" :class="{show: toastMsg}">{{ toastMsg }}</div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="/static/js/panel.js"></script>
+</body>
+</html>
+{% endverbatim %}
