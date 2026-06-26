@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>محور طريق الأمير محمد بن سلمان — حالة الجسور</title>
+  <title>محور طريق الأمير محمد بن سلمان — حالة الطرق والجسور</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -27,37 +27,65 @@
   <div id="map"></div>
   <div class="loading" v-if="loading">جارٍ تحميل البيانات…</div>
 
+  <div class="filter-panel">
+    <label class="filter-option">
+      <input type="checkbox" v-model="showBridges" />
+      <span>🌉 الجسور</span>
+    </label>
+    <label class="filter-option">
+      <input type="checkbox" v-model="showRoads" />
+      <span>🛣️ الطرق</span>
+    </label>
+  </div>
+
 
   <div class="modal-overlay" v-if="selected" @click.self="closePanel">
    <div class="modal">
     <div class="panel-head">
       <button class="close" @click="closePanel">✕</button>
-      <h2>{{ selected.name }}</h2>
+      <h2>{{ selected.name || selected.segment }}</h2>
       <div class="meta">
+        <span v-if="selected.direction_display" class="direction-badge">{{ selected.direction_display }}</span>
         <span class="status-badge" :class="'status-'+selected.status">{{ selected.status_display }}</span>
       </div>
     </div>
     <div class="panel-body">
-      <div class="kv">
+      <div v-if="selected.defects" class="kv">
         <div class="cell"><span>عدد الحالات</span><b>{{ selected.defects.length }}</b></div>
-        <div class="cell"><span>الحالات المفتوحة</span><b>{{ selected.open_count }}</b></div>
+        <div class="cell" v-if="selected.open_count !== undefined"><span>الحالات المفتوحة</span><b>{{ selected.open_count }}</b></div>
+        <div class="cell" v-if="selected.untreated_count !== undefined"><span>الحالات غير المعالجة</span><b>{{ selected.untreated_count }}</b></div>
       </div>
-      <div class="section-title">الحالات المرصودة <span class="count">{{ selected.defects.length }}</span></div>
-      <div v-if="!selected.defects.length" class="empty">لا توجد حالات مسجّلة على هذا الجسر ✅</div>
-      <div v-for="d in selected.defects" :key="d.id" class="defect" :class="'st-'+d.status" @click="openImages(d)">
-        <div class="row">
-          <h3>{{ d.title }}</h3>
-          <span class="status-badge" :class="'status-'+d.status">{{ d.status_display }}</span>
+
+      <div v-if="selected.defects">
+        <div class="section-title">الحالات المرصودة <span class="count">{{ selected.defects.length }}</span></div>
+        <div v-if="!selected.defects.length" class="empty">لا توجد حالات مسجّلة ✅</div>
+        <div v-for="d in selected.defects" :key="d.id" class="defect" :class="'st-'+d.status" @click="openImages(d)">
+          <div class="gallery" v-if="d.images && d.images.length" style="margin-bottom: 8px;">
+            <img v-for="(im, idx) in d.images" :key="im.id" :src="im.image" :alt="im.caption || d.title" @click.stop="openImages(d, idx)" style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px;" />
+          </div>
+          <div class="row">
+            <h3>{{ d.title || 'حالة بدون اسم' }}</h3>
+            <span class="status-badge" :class="'status-'+d.status">{{ d.status_display }}</span>
+          </div>
+          <p v-if="d.description">{{ d.description }}</p>
+          <div class="metrics" v-if="d.length_m !== undefined">
+            <div class="metric"><span>الطول</span><b>{{ d.length_m }} م</b></div>
+            <div class="metric"><span>العرض</span><b>{{ d.width_m }} م</b></div>
+            <div class="metric"><span>المساحة</span><b>{{ d.area_m2 }} م²</b></div>
+            <div class="metric"><span>العدد</span><b>{{ d.count }}</b></div>
+          </div>
+          <div class="metrics" v-else>
+            <div class="metric" v-if="d.direction_display"><span>الاتجاه</span><b>{{ d.direction_display }}</b></div>
+            <div class="metric" v-if="d.observation"><span>الملاحظة</span><b>{{ d.observation }}</b></div>
+            <div class="metric" v-if="d.treatment_type_display"><span>المعالجة</span><b>{{ d.treatment_type_display }}</b></div>
+          </div>
         </div>
-        <p v-if="d.description">{{ d.description }}</p>
-        <div class="metrics">
-          <div class="metric"><span>الطول</span><b>{{ d.length_m }} م</b></div>
-          <div class="metric"><span>العرض</span><b>{{ d.width_m }} م</b></div>
-          <div class="metric"><span>المساحة</span><b>{{ d.area_m2 }} م²</b></div>
-          <div class="metric"><span>العدد</span><b>{{ d.count }}</b></div>
-        </div>
-        <div class="gallery" v-if="d.images.length">
-          <img v-for="(im, idx) in d.images" :key="im.id" :src="im.image" :alt="im.caption || d.title" @click.stop="openImages(d, idx)" />
+      </div>
+
+      <div v-else class="road-details">
+        <div class="detail-item">
+          <span>الإحداثيات</span>
+          <p>{{ selected.lat.toFixed(4) }}, {{ selected.lng.toFixed(4) }}</p>
         </div>
       </div>
     </div>

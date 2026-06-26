@@ -5,13 +5,14 @@
 
 ## التقنيات
 - **الخلفية (Backend):** Python · Django 6 · Django REST Framework
-- **قاعدة البيانات:** SQLite
+- **قاعدة البيانات:** PostgreSQL (عبر DATABASE_URL)
 - **الواجهة (Frontend):** Vue 3 (عبر CDN) + Leaflet.js للخرائط
 - خرائط القمر الصناعي من Esri والشوارع من CARTO (بدون مفاتيح API).
 
 ## التشغيل
 ```bash
 pip install -r requirements.txt
+set DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/DBNAME
 python manage.py migrate
 python manage.py seed          # بيانات تجريبية + مستخدم admin
 python manage.py runserver

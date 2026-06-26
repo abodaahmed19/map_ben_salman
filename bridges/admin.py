@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Bridge, Defect, DefectImage
+from .models import Bridge, Defect, DefectImage, Road
 
 
 class DefectImageInline(admin.TabularInline):
@@ -19,6 +19,26 @@ class BridgeAdmin(admin.ModelAdmin):
     list_filter = ("status",)
     search_fields = ("name",)
     inlines = [DefectInline]
+
+
+@admin.register(Road)
+class RoadAdmin(admin.ModelAdmin):
+    list_display = ("segment", "status", "lat", "lng", "created_at")
+    list_filter = ("status",)
+    search_fields = ("segment",)
+    readonly_fields = ("created_at",)
+    fieldsets = (
+        ("معلومات الطريق", {
+            "fields": ("segment", "status")
+        }),
+        ("الموقع", {
+            "fields": ("lat", "lng")
+        }),
+        ("المعلومات", {
+            "fields": ("created_at",),
+            "classes": ("collapse",)
+        }),
+    )
 
 
 @admin.register(Defect)
