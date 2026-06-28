@@ -23,16 +23,13 @@ class BridgeAdmin(admin.ModelAdmin):
 
 @admin.register(Road)
 class RoadAdmin(admin.ModelAdmin):
-    list_display = ("segment", "status", "lat", "lng", "created_at")
-    list_filter = ("status",)
+    list_display = ("segment", "status", "direction", "created_at")
+    list_filter = ("status", "direction")
     search_fields = ("segment",)
     readonly_fields = ("created_at",)
     fieldsets = (
         ("معلومات الطريق", {
-            "fields": ("segment", "status")
-        }),
-        ("الموقع", {
-            "fields": ("lat", "lng")
+            "fields": ("segment", "status", "direction")
         }),
         ("المعلومات", {
             "fields": ("created_at",),

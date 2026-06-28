@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="/static/css/styles.css" />
 </head>
 <body>
@@ -28,14 +29,46 @@
   <div class="loading" v-if="loading">جارٍ تحميل البيانات…</div>
 
   <div class="filter-panel">
-    <label class="filter-option">
-      <input type="checkbox" v-model="showBridges" />
-      <span>🌉 الجسور</span>
-    </label>
-    <label class="filter-option">
-      <input type="checkbox" v-model="showRoads" />
-      <span>🛣️ الطرق</span>
-    </label>
+    <div class="filter-field">
+      <label>النوع</label>
+      <select v-model="filterType">
+        <option value="all">🛣️🌉 الطرق والجسور</option>
+        <option value="roads">🛣️ الطرق</option>
+        <option value="bridges">🌉 الجسور</option>
+      </select>
+    </div>
+    <template v-if="filterType === 'roads'">
+      <div class="filter-field">
+        <label>الاتجاه</label>
+        <select v-model="fDirection"><option value="">الكل</option><option value="mecca">مكة</option><option value="jeddah">جدة</option></select>
+      </div>
+      <div class="filter-field">
+        <label>حالة المعالجة</label>
+        <select v-model="fTreatment"><option value="">الكل</option><option value="treated">معالج</option><option value="untreated">غير معالج</option></select>
+      </div>
+      <div class="filter-field">
+        <label>الحالة</label>
+        <select v-model="fStatus"><option value="">الكل</option><option value="critical">حرج</option><option value="medium">متوسط</option><option value="low">منخفض</option></select>
+      </div>
+    </template>
+    <template v-else-if="filterType === 'bridges'">
+      <div class="filter-field">
+        <label>حالة المعالجة</label>
+        <select v-model="fbTreatment"><option value="">الكل</option><option value="open">مفتوح</option><option value="in_progress">جاري المعالجة</option><option value="resolved">منتهى</option></select>
+      </div>
+      <div class="filter-field">
+        <label>الحالة</label>
+        <select v-model="fbStatus"><option value="">الكل</option><option value="critical">حرج</option><option value="operational">ضعيف</option><option value="maintenance">مقبول</option><option value="good">جيد</option></select>
+      </div>
+    </template>
+    <div class="filter-actions">
+      <button class="count-chip" @click="zoomToVisible" title="تقريب على المعروض">
+        <span>{{ filterType === 'bridges' ? 'الجسور' : filterType === 'roads' ? 'الحالات' : 'المعروض' }}</span>
+        <b>{{ visibleCount }}</b>
+        <small>🔍</small>
+      </button>
+      <button class="dash-btn" v-if="filterType !== 'all'" @click="openDash">📊 لوحة البيانات</button>
+    </div>
   </div>
 
 
@@ -43,20 +76,26 @@
    <div class="modal">
     <div class="panel-head">
       <button class="close" @click="closePanel">✕</button>
-      <h2>{{ selected.name || selected.segment }}</h2>
+      <h2>{{ selectedType === 'bridge' ? selected.name : (selected.title || 'حالة طريق') }}</h2>
       <div class="meta">
-        <span v-if="selected.direction_display" class="direction-badge">{{ selected.direction_display }}</span>
+        <span v-if="selectedType === 'roadcase' && selected.direction_display" class="direction-badge">{{ selected.direction_display }}</span>
         <span class="status-badge" :class="'status-'+selected.status">{{ selected.status_display }}</span>
+        <span v-if="selectedType === 'roadcase' && selected.road_segment" class="chip">🛣️ {{ selected.road_segment }}</span>
       </div>
     </div>
     <div class="panel-body">
-      <div v-if="selected.defects" class="kv">
-        <div class="cell"><span>عدد الحالات</span><b>{{ selected.defects.length }}</b></div>
-        <div class="cell" v-if="selected.open_count !== undefined"><span>الحالات المفتوحة</span><b>{{ selected.open_count }}</b></div>
-        <div class="cell" v-if="selected.untreated_count !== undefined"><span>الحالات غير المعالجة</span><b>{{ selected.untreated_count }}</b></div>
-      </div>
+      <a class="gmaps-btn" :href="gmapsUrl" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg>
+        الموقع على خرائط جوجل
+      </a>
 
-      <div v-if="selected.defects">
+      <!-- جسر: قائمة الحالات -->
+      <template v-if="selectedType === 'bridge'">
+        <div class="kv">
+          <div class="cell"><span>عدد الحالات</span><b>{{ selected.defects.length }}</b></div>
+          <div class="cell" v-if="selected.open_count !== undefined"><span>الحالات المفتوحة</span><b>{{ selected.open_count }}</b></div>
+        </div>
+        <div class="coord-line"><span>📍 الإحداثيات</span><b>{{ selected.lat.toFixed(5) }} , {{ selected.lng.toFixed(5) }}</b></div>
         <div class="section-title">الحالات المرصودة <span class="count">{{ selected.defects.length }}</span></div>
         <div v-if="!selected.defects.length" class="empty">لا توجد حالات مسجّلة ✅</div>
         <div v-for="d in selected.defects" :key="d.id" class="defect" :class="'st-'+d.status" @click="openImages(d)">
@@ -68,28 +107,93 @@
             <span class="status-badge" :class="'status-'+d.status">{{ d.status_display }}</span>
           </div>
           <p v-if="d.description">{{ d.description }}</p>
-          <div class="metrics" v-if="d.length_m !== undefined">
+          <div class="metrics">
             <div class="metric"><span>الطول</span><b>{{ d.length_m }} م</b></div>
             <div class="metric"><span>العرض</span><b>{{ d.width_m }} م</b></div>
             <div class="metric"><span>المساحة</span><b>{{ d.area_m2 }} م²</b></div>
             <div class="metric"><span>العدد</span><b>{{ d.count }}</b></div>
           </div>
-          <div class="metrics" v-else>
-            <div class="metric" v-if="d.direction_display"><span>الاتجاه</span><b>{{ d.direction_display }}</b></div>
-            <div class="metric" v-if="d.observation"><span>الملاحظة</span><b>{{ d.observation }}</b></div>
-            <div class="metric" v-if="d.treatment_type_display"><span>المعالجة</span><b>{{ d.treatment_type_display }}</b></div>
-          </div>
         </div>
-      </div>
+      </template>
 
-      <div v-else class="road-details">
-        <div class="detail-item">
-          <span>الإحداثيات</span>
-          <p>{{ selected.lat.toFixed(4) }}, {{ selected.lng.toFixed(4) }}</p>
+      <!-- حالة طريق مفردة -->
+      <template v-else>
+        <div class="gallery" v-if="selected.images && selected.images.length" style="margin-bottom: 14px;">
+          <img v-for="(im, idx) in selected.images" :key="im.id" :src="im.image" :alt="im.caption || selected.title" @click.stop="openImages(selected, idx)" style="width: 100%; height: 170px; object-fit: cover; border-radius: 9px;" />
+        </div>
+        <p v-if="selected.description" class="desc">{{ selected.description }}</p>
+        <div class="metrics">
+          <div class="metric" v-if="selected.direction_display"><span>الاتجاه</span><b>{{ selected.direction_display }}</b></div>
+          <div class="metric" v-if="selected.observation"><span>الملاحظة</span><b>{{ selected.observation }}</b></div>
+          <div class="metric" v-if="selected.treatment_type_display"><span>المعالجة</span><b>{{ selected.treatment_type_display }}</b></div>
+          <div class="metric"><span>الإحداثيات</span><b>{{ selected.lat.toFixed(4) }}, {{ selected.lng.toFixed(4) }}</b></div>
+        </div>
+      </template>
+    </div>
+   </div>
+  </div>
+
+  <!-- لوحة البيانات -->
+  <div class="dash-overlay" v-if="showDash" @click.self="closeDash">
+    <div class="dash-modal">
+      <div class="dash-head">
+        <h2>📊 لوحة البيانات — {{ dashMode === 'bridges' ? 'الجسور' : 'الطرق' }}</h2>
+        <button class="close" @click="closeDash">✕</button>
+      </div>
+      <div class="dash-body">
+        <!-- مؤشرات -->
+        <div class="kpi-row" v-if="dashMode === 'roads'">
+          <div class="kpicard"><b>{{ visibleRoadCases.length }}</b><span>إجمالي الحالات</span></div>
+          <div class="kpicard"><b style="color:#22c55e">{{ visibleRoadCases.filter(d=>d.treatment_type==='treated').length }}</b><span>معالج</span></div>
+          <div class="kpicard"><b style="color:#dc2626">{{ visibleRoadCases.filter(d=>d.treatment_type==='untreated').length }}</b><span>غير معالج</span></div>
+          <div class="kpicard"><b style="color:#dc2626">{{ visibleRoadCases.filter(d=>d.status==='critical').length }}</b><span>حرج</span></div>
+        </div>
+        <div class="kpi-row" v-else>
+          <div class="kpicard"><b>{{ visibleBridges.length }}</b><span>إجمالي الجسور</span></div>
+          <div class="kpicard"><b style="color:#dc2626">{{ visibleBridges.filter(b=>b.status==='critical').length }}</b><span>حرجة</span></div>
+          <div class="kpicard"><b>{{ visibleBridges.reduce((s,b)=>s+(b.defects?b.defects.length:0),0) }}</b><span>إجمالي الحالات</span></div>
+          <div class="kpicard"><b style="color:#ea580c">{{ visibleBridges.reduce((s,b)=>s+(b.defects?b.defects.filter(d=>d.status==='open').length:0),0) }}</b><span>حالات مفتوحة</span></div>
+        </div>
+
+        <!-- رسوم -->
+        <div class="chart-grid" v-if="dashMode === 'roads'">
+          <div class="chart-card"><h3>الحالة (الخطورة)</h3><div class="chartbox"><canvas id="ch1"></canvas></div></div>
+          <div class="chart-card"><h3>حالة المعالجة</h3><div class="chartbox"><canvas id="ch2"></canvas></div></div>
+          <div class="chart-card"><h3>الاتجاه</h3><div class="chartbox"><canvas id="ch3"></canvas></div></div>
+          <div class="chart-card"><h3>الحالات حسب المقطع</h3><div class="chartbox"><canvas id="ch4"></canvas></div></div>
+        </div>
+        <div class="chart-grid" v-else>
+          <div class="chart-card"><h3>حالة الجسور</h3><div class="chartbox"><canvas id="ch1"></canvas></div></div>
+          <div class="chart-card"><h3>حالات الجسور حسب المعالجة</h3><div class="chartbox"><canvas id="ch2"></canvas></div></div>
+        </div>
+
+        <!-- جدول -->
+        <div class="dash-table">
+          <table v-if="dashMode === 'roads'">
+            <thead><tr><th>الحالة</th><th>المقطع</th><th>الاتجاه</th><th>المعالجة</th><th>الخطورة</th></tr></thead>
+            <tbody>
+              <tr v-for="d in visibleRoadCases" :key="d.id" @click="focusFromDash(d,'roadcase')">
+                <td>{{ d.title || '—' }}</td>
+                <td>{{ d.road_segment }}</td>
+                <td>{{ d.direction_display }}</td>
+                <td><span class="badge" :style="{background: d.treatment_type==='treated' ? '#16a34a' : '#dc2626'}">{{ d.treatment_type_display }}</span></td>
+                <td><span class="badge" :style="{background: d.color}">{{ d.status_display }}</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <table v-else>
+            <thead><tr><th>الجسر</th><th>الحالة</th><th>عدد الحالات</th></tr></thead>
+            <tbody>
+              <tr v-for="b in visibleBridges" :key="b.id" @click="focusFromDash(b,'bridge')">
+                <td>{{ b.name }}</td>
+                <td><span class="badge" :style="{background: b.color}">{{ b.status_display }}</span></td>
+                <td>{{ b.defects.length }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
-   </div>
   </div>
 
   <div class="lightbox" v-if="lightbox" @click.self="closeLightbox">
@@ -113,8 +217,10 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="/static/js/viewer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="/static/js/viewer.js?v=4"></script>
 </body>
 </html>
 {% endverbatim %}

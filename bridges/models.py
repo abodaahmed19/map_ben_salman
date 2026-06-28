@@ -79,6 +79,10 @@ class Road(models.Model):
         ("medium", "متوسط"),
         ("low", "منخفض"),
     ]
+    DIRECTION = [
+        ("mecca", "مكة"),
+        ("jeddah", "جدة"),
+    ]
     STATUS_COLORS = {
         "critical": "rgb(220, 38, 38)",
         "medium": "rgb(234, 88, 12)",
@@ -87,8 +91,7 @@ class Road(models.Model):
 
     segment = models.CharField("المقطع", max_length=200)
     status = models.CharField("الحالة", max_length=20, choices=STATUS, default="medium")
-    lat = models.FloatField("خط العرض", default=21.4275)
-    lng = models.FloatField("خط الطول", default=39.8235)
+    direction = models.CharField("الاتجاه", max_length=20, choices=DIRECTION, default="mecca")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -109,22 +112,26 @@ class RoadDefect(models.Model):
         ("medium", "متوسط"),
         ("low", "منخفض"),
     ]
-    DIRECTION = [
-        ("mecca", "مكة"),
-        ("jeddah", "جدة"),
-    ]
     TREATMENT = [
         ("treated", "معالج"),
         ("untreated", "غير معالج"),
     ]
 
+    STATUS_COLORS = {
+        "critical": "rgb(220, 38, 38)",
+        "medium": "rgb(234, 88, 12)",
+        "low": "rgb(34, 197, 94)",
+    }
+
     road = models.ForeignKey(Road, related_name="defects", on_delete=models.CASCADE, verbose_name="الطريق")
     title = models.CharField("اسم/عنوان الحالة", max_length=200, blank=True)
     status = models.CharField("الحالة", max_length=20, choices=STATUS, default="medium")
-    direction = models.CharField("الاتجاه", max_length=20, choices=DIRECTION, default="mecca")
     observation = models.CharField("الملاحظة", max_length=255, blank=True, help_text="اسفلت - أصول جانبي الطريق")
     description = models.TextField("الوصف", blank=True)
     treatment_type = models.CharField("نوع المعالجة", max_length=20, choices=TREATMENT, default="untreated")
+    # موقع الحالة على الخريطة (كل حالة ماركر مستقل)
+    lat = models.FloatField("خط العرض", default=21.38866)
+    lng = models.FloatField("خط الطول", default=39.42683)
 
     class Meta:
         verbose_name = "حالة طريق"
@@ -132,6 +139,10 @@ class RoadDefect(models.Model):
 
     def __str__(self):
         return f"{self.title or 'حالة'} ({self.road.segment})"
+
+    @property
+    def color(self):
+        return self.STATUS_COLORS.get(self.status, "#3c7a5a")
 
 
 class RoadDefectImage(models.Model):

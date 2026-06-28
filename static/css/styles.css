@@ -85,18 +85,30 @@ a { color: var(--mint); }
 }
 .leaflet-tooltip-top.bridge-label::before { border-top-color: var(--line); }
 
-/* علامة الجسر (نقطة) */
+/* علامة الجسر (دبوس دائري برمز جسر) */
 .bridge-marker {
-  position: relative; width: 38px; height: 38px; border-radius: 50%;
-  display: grid; place-items: center; font-size: 19px;
+  position: relative; width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
   background: var(--bc); border: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,.55);
   cursor: pointer; transition: transform .15s;
 }
+.bridge-marker svg { width: 22px; height: 22px; }
 .bridge-marker::after {
   content: ""; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
   border: 7px solid transparent; border-top-color: #fff;
 }
-.bridge-marker.selected { transform: scale(1.18); box-shadow: 0 7px 20px rgba(0,0,0,.65); }
+.bridge-marker.selected { transform: scale(1.2); box-shadow: 0 7px 20px rgba(0,0,0,.65); z-index: 1000; }
+
+/* علامة مقطع الطريق (لوحة التحكم) — دبوس مميّز للتجميع */
+.segment-marker {
+  position: relative; width: 30px; height: 30px; border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: grid; place-items: center;
+  background: var(--bc); border: 3px dashed #fff; box-shadow: 0 4px 12px rgba(0,0,0,.55);
+  cursor: pointer; transition: transform .15s;
+}
+.segment-marker svg { width: 15px; height: 15px; transform: rotate(45deg); }
+.segment-marker.selected { transform: rotate(-45deg) scale(1.18); }
 
 /* ====== مودال تفاصيل الجسر (العرض) ====== */
 .modal-overlay {
@@ -113,6 +125,17 @@ a { color: var(--mint); }
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modalIn { from { opacity: 0; transform: translateY(16px) scale(.97); } to { opacity: 1; transform: none; } }
+
+/* زر الموقع على خرائط جوجل */
+.gmaps-btn {
+  display: inline-flex; align-items: center; gap: 8px; width: 100%; justify-content: center;
+  margin: 4px 0 16px; padding: 11px 16px; border-radius: 11px; cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 700; text-decoration: none;
+  background: linear-gradient(135deg, var(--green-600), var(--mint)); color: #07211a; border: none;
+  transition: .15s;
+}
+.gmaps-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.gmaps-btn svg { width: 18px; height: 18px; }
 .panel-head {
   padding: 20px 22px 18px; position: relative;
   background: linear-gradient(180deg, rgba(58, 110, 92, .95), rgba(20, 36, 31, .9));
@@ -275,6 +298,64 @@ a { color: var(--mint); }
   white-space: nowrap;
 }
 
+/* فلاتر القوائم المنسدلة (النوع/الاتجاه/المعالجة/الحالة) */
+.filter-field { display: flex; flex-direction: column; gap: 4px; }
+.filter-field label { font-size: 11px; color: var(--muted); font-weight: 700; }
+.filter-field select {
+  background: var(--green-800); border: 1px solid var(--line); color: var(--text);
+  border-radius: 9px; padding: 8px 10px; font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; min-width: 152px;
+}
+.filter-field select:focus { outline: none; border-color: var(--mint); }
+
+/* العدّاد وزر لوحة البيانات */
+.filter-actions { display: flex; gap: 8px; margin-top: 4px; }
+.count-chip { flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--green-800); border: 1px solid var(--line); color: var(--text); border-radius: 10px;
+  padding: 8px 10px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; transition: .15s; }
+.count-chip:hover { border-color: var(--mint); transform: translateY(-1px); }
+.count-chip b { color: var(--mint); font-size: 16px; }
+.count-chip small { opacity: .65; font-size: 11px; }
+.dash-btn { flex: 1.2; display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-bright)); color: #20180a; border: none;
+  border-radius: 10px; padding: 8px 10px; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 800; transition: .15s; }
+.dash-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+
+/* سطر الإحداثيات داخل مودال الجسر */
+.coord-line { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--green-800); border: 1px solid var(--line); border-radius: 11px; padding: 10px 13px; margin-bottom: 18px; }
+.coord-line span { font-size: 12px; color: var(--muted); font-weight: 600; }
+.coord-line b { font-size: 14px; font-variant-numeric: tabular-nums; direction: ltr; }
+
+/* ====== لوحة البيانات (Dashboard) ====== */
+.dash-overlay { position: fixed; inset: 0; z-index: 2500; background: rgba(8,16,14,.72); backdrop-filter: blur(5px);
+  display: flex; align-items: center; justify-content: center; padding: 22px; animation: fadeIn .2s ease; }
+.dash-modal { width: 1100px; max-width: 100%; max-height: 92vh; display: flex; flex-direction: column;
+  background: var(--green-900); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow);
+  overflow: hidden; animation: modalIn .26s cubic-bezier(.2,.8,.2,1); }
+.dash-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px;
+  border-bottom: 1px solid var(--line); background: var(--green-800); }
+.dash-head h2 { font-size: 18px; font-weight: 800; }
+.dash-head .close { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line);
+  background: var(--green-900); color: var(--muted); cursor: pointer; font-size: 18px; }
+.dash-head .close:hover { color: #fff; border-color: var(--crit); }
+.dash-body { padding: 18px 20px; overflow-y: auto; }
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.kpicard { background: linear-gradient(135deg, var(--green-800), var(--green-850)); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+.kpicard b { display: block; font-size: 28px; font-weight: 800; line-height: 1; }
+.kpicard span { font-size: 12px; color: var(--muted); }
+.chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 16px; }
+.chart-card { background: var(--green-800); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.chart-card h3 { font-size: 13px; color: #cbd5cf; margin-bottom: 10px; }
+.chartbox { position: relative; height: 220px; }
+.dash-table { background: var(--green-800); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; max-height: 360px; overflow-y: auto; }
+.dash-table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.dash-table th, .dash-table td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: start; white-space: nowrap; }
+.dash-table th { color: var(--muted); position: sticky; top: 0; background: var(--green-700); font-size: 12px; }
+.dash-table tbody tr { cursor: pointer; transition: background .12s; }
+.dash-table tbody tr:hover td { background: var(--green-700); }
+.dash-table .badge { padding: 2px 9px; border-radius: 20px; font-size: 11px; color: #fff; font-weight: 700; }
+
 .btn-add {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line);
@@ -343,20 +424,29 @@ a { color: var(--mint); }
   flex: 1;
 }
 
-/* علامة الطريق (نقطة) */
+/* علامة حالة الطريق (دبوس مربّع برمز طريق) */
 .road-marker {
-  position: relative; width: 38px; height: 38px; border-radius: 50%;
-  display: grid; place-items: center; font-size: 19px;
+  position: relative; width: 38px; height: 38px; border-radius: 10px;
+  display: grid; place-items: center;
   background: var(--bc); border: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,.55);
   cursor: pointer; transition: transform .15s;
 }
-
+.road-marker svg { width: 21px; height: 21px; }
 .road-marker::after {
   content: ""; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
   border: 7px solid transparent; border-top-color: #fff;
 }
+.road-marker.selected { transform: scale(1.2); box-shadow: 0 7px 20px rgba(0,0,0,.65); z-index: 1000; }
 
-.road-marker.selected { transform: scale(1.18); box-shadow: 0 7px 20px rgba(0,0,0,.65); }
+/* علامة التجميع (عدد العناصر في المنطقة) */
+.cluster-marker {
+  display: grid; place-items: center; border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, var(--mint), var(--green-600) 75%);
+  color: #06231c; font-weight: 800; font-size: 15px;
+  border: 3px solid #fff; box-shadow: 0 4px 14px rgba(0,0,0,.55); cursor: pointer;
+  transition: transform .12s;
+}
+.cluster-marker:hover { transform: scale(1.08); }
 
 /* تفاصيل الطريق */
 .road-details {
@@ -389,6 +479,52 @@ a { color: var(--mint); }
   .modal-overlay { padding: 12px; }
   .modal { max-height: 92vh; }
   .admin-shell { grid-template-columns: 1fr; }
-  .admin-side { order: 2; }
-  #admin-map { order: 1; min-height: 48vh; }
+  .admin-side { order: 2; max-height: none; }
+  #admin-map { order: 1; min-height: 52vh; }
+  .filter-panel { flex-wrap: wrap; max-width: calc(100vw - 40px); }
+}
+
+/* ====== الجوال ====== */
+@media (max-width: 640px) {
+  .topbar {
+    height: 56px; gap: 10px; padding: 0 12px;
+  }
+  .brand-lockup { gap: 8px; }
+  .brand-lockup img { height: 30px; }
+  .brand-lockup .divider, .brand-lockup .dept { display: none; }
+  .title-block h1 { font-size: 14px; line-height: 1.25; }
+  .topbar .btn { padding: 8px 10px; font-size: 12px; }
+
+  #map, #admin-map, .loading { inset-block-start: 56px; }
+  .admin-shell { inset-block-start: 56px; }
+
+  /* الفلاتر: شريط سفلي قابل للتمرير الأفقي */
+  .filter-panel {
+    top: auto; bottom: 12px; inset-inline: 10px;
+    flex-direction: row; flex-wrap: nowrap; overflow-x: auto;
+    gap: 8px; padding: 10px; max-width: none;
+  }
+  .filter-field { flex: 0 0 auto; }
+  .filter-field select { min-width: 120px; font-size: 12px; padding: 7px 9px; }
+  .legend { display: none; }
+
+  /* المودال: ورقة سفلية بكامل العرض */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal { width: 100%; max-width: 100%; max-height: 86vh; border-radius: 18px 18px 0 0; }
+  .panel-head h2 { font-size: 17px; }
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .gmaps-btn { font-size: 13px; padding: 10px 14px; }
+
+  /* لوحة التحكم على الجوال */
+  .admin-side { padding: 12px; gap: 12px; }
+  #admin-map { min-height: 46vh; }
+  .draw-toolbar { inset-inline: 10px; inset-inline-end: 10px; flex-wrap: wrap; }
+
+  /* لوحة البيانات على الجوال */
+  .dash-overlay { padding: 0; align-items: flex-end; }
+  .dash-modal { width: 100%; max-width: 100%; max-height: 90vh; border-radius: 18px 18px 0 0; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .kpicard b { font-size: 22px; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .filter-field select { min-width: 140px; }
 }

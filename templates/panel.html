@@ -23,6 +23,7 @@
     </div>
     <div class="spacer"></div>
     <a class="btn mint" href="/" target="_blank">👁️ معاينة العرض</a>
+    <a class="btn danger" href="/panel/logout/">🔒 خروج</a>
   </header>
 
   <div class="admin-shell">
@@ -38,82 +39,100 @@
 
       <!-- ==================== قسم الجسور ==================== -->
       <div v-show="activeTab === 'bridges'">
+        <!-- بطاقة قائمة الجسور (بدون بطاقة بيانات الجسر داخلها) -->
         <div class="card">
           <h3>🌉 الجسور</h3>
           <div v-if="!bridges.length" class="empty">لا توجد جسور بعد — أضف أول جسر.</div>
-          <div v-for="b in bridges" :key="b.id" class="list-item" :class="{active: selBridge && selBridge.id===b.id}" @click="selectBridge(b.id)">
-            <div class="swatch" :style="{background: statusColor(b.status)}"></div>
-            <div class="info"><b>{{ b.name }}</b><span>{{ b.defects.length }} حالة · {{ b.status_display }}</span></div>
-            <button class="del" @click.stop="deleteBridge(b)">🗑️</button>
+          
+          <!-- حلقة عرض الجسور -->
+          <div v-for="b in bridges" :key="b.id">
+            <!-- عنصر الجسر (list-item) -->
+            <div class="list-item" :class="{active: selBridge && selBridge.id === b.id}" @click="selectBridge(b.id)">
+              <div class="swatch" :style="{background: statusColor(b.status)}"></div>
+              <div class="info"><b>{{ b.name }}</b><span>{{ b.defects.length }} حالة · {{ b.status_display }}</span></div>
+              <button class="del" @click.stop="deleteBridge(b)">🗑️</button>
+            </div>
+
+            <!-- بطاقة بيانات الجسر (تظهر تحت العنصر مباشرة إذا كان هو المحدد) -->
+            <div class="card" v-if="selBridge && selBridge.id === b.id" style="margin-top: 8px; margin-bottom: 8px;">
+              <h3>✏️ بيانات الجسر</h3>
+              <div class="field"><label>اسم الجسر</label><input v-model="selBridge.name" @change="saveBridge" /></div>
+              <div class="field"><label>الوصف</label><textarea v-model="selBridge.description" @change="saveBridge"></textarea></div>
+              <div class="field"><label>الحالة</label>
+                <select v-model="selBridge.status" @change="saveBridge">
+                  <option value="critical">حرج</option>
+                  <option value="operational">ضعيف</option>
+                  <option value="maintenance">مقبول</option>
+                  <option value="good">جيد</option>
+                </select>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>خط العرض (lat)</label><input type="number" step="any" v-model.number="selBridge.lat" @change="saveBridge" /></div>
+                <div class="field"><label>خط الطول (lng)</label><input type="number" step="any" v-model.number="selBridge.lng" @change="saveBridge" /></div>
+              </div>
+              <div class="field-row">
+                <button class="btn" style="justify-content:center" @click="startMoveBridge()">📍 تحديد على الخريطة</button>
+                <button class="btn danger" style="justify-content:center" @click="deleteBridge(selBridge)">🗑️ حذف الجسر</button>
+              </div>
+            </div>
           </div>
+
           <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="startPlaceBridge()">➕ إضافة جسر</button>
         </div>
 
-        <div class="card" v-if="selBridge">
-          <h3>✏️ بيانات الجسر</h3>
-          <div class="field"><label>اسم الجسر</label><input v-model="selBridge.name" @change="saveBridge" /></div>
-          <div class="field"><label>الوصف</label><textarea v-model="selBridge.description" @change="saveBridge"></textarea></div>
-          <div class="field"><label>الحالة</label>
-            <select v-model="selBridge.status" @change="saveBridge">
-              <option value="critical">حرج</option>
-              <option value="operational">ضعيف</option>
-              <option value="maintenance">مقبول</option>
-              <option value="good">جيد</option>
-            </select>
-          </div>
-          <div class="field"><label>الإحداثيات</label>
-            <input :value="selBridge.lat.toFixed(5) + ' , ' + selBridge.lng.toFixed(5)" readonly />
-          </div>
-          <div class="field-row">
-            <button class="btn" style="justify-content:center" @click="startMoveBridge()">📍 تحريك الموقع</button>
-            <button class="btn danger" style="justify-content:center" @click="deleteBridge(selBridge)">🗑️ حذف الجسر</button>
-          </div>
-        </div>
-
+        <!-- ===== بطاقة الحالات (قائمة الحالات) ===== -->
+        <!-- وضعناها خارج قائمة الجسور ولكن داخل v-show للجسور -->
         <div class="card" v-if="selBridge">
           <h3>⚠️ الحالات</h3>
           <div v-if="!selBridge.defects.length" class="empty">لا توجد سجلات — أضف حالة.</div>
-          <div v-for="d in selBridge.defects" :key="d.id" class="list-item" @click="editDefect(d)">
-            <div class="swatch" :style="{background: statusColor(selBridge.status)}"></div>
-            <div class="info"><b>{{ d.title }}</b><span>{{ d.status_display }} · {{ d.images.length }} صورة</span></div>
-            <button class="del" @click.stop="deleteDefect(d)">🗑️</button>
-          </div>
-          <button class="btn" style="width:100%;justify-content:center;margin-top:6px" @click="newDefect">➕ إضافة حالة</button>
+          
+          <!-- حلقة عرض الحالات -->
+          <div v-for="d in selBridge.defects" :key="d.id">
+            <!-- عنصر الحالة (list-item) -->
+            <div class="list-item" @click="editDefect(d)">
+              <div class="swatch" :style="{background: statusColor(selBridge.status)}"></div>
+              <div class="info"><b>{{ d.title }}</b><span>{{ d.status_display }} · {{ d.images.length }} صورة</span></div>
+              <button class="del" @click.stop="deleteDefect(d)">🗑️</button>
+            </div>
 
-          <div class="card" v-if="draft" style="margin-top:16px;">
-            <h3>🔧 {{ draft.id ? 'تعديل الحالة' : 'حالة جديدة' }}</h3>
-            <div class="field"><label>اسم الحالة</label><input v-model="draft.title" /></div>
-            <div class="field"><label>الحالة</label>
-              <select v-model="draft.status">
-                <option value="open">مفتوح</option>
-                <option value="in_progress">جاري المعالجة</option>
-                <option value="resolved">منتهى</option>
-              </select>
-            </div>
-            <div class="field"><label>الوصف</label><textarea v-model="draft.description"></textarea></div>
-            <div class="field-row">
-              <div class="field"><label>الطول (م)</label><input type="number" step="any" v-model.number="draft.length_m" /></div>
-              <div class="field"><label>العرض (م)</label><input type="number" step="any" v-model.number="draft.width_m" /></div>
-            </div>
-            <div class="field-row">
-              <div class="field"><label>المساحة (م²)</label><input type="number" step="any" v-model.number="draft.area_m2" /></div>
-              <div class="field"><label>العدد</label><input type="number" v-model.number="draft.count" /></div>
-            </div>
-            <div class="field">
-              <label>الصور</label>
-              <div class="thumb-row">
-                <div class="thumb" v-for="im in draft.images" :key="im.id">
-                  <img :src="im.image" /><button class="x" @click="deleteImage(im)">✕</button>
-                </div>
+            <!-- بطاقة تعديل الحالة (تظهر تحت العنصر مباشرة إذا كان هو المحدد) -->
+            <div class="card" v-if="draft && draft.id === d.id" style="margin-top: 8px; margin-bottom: 8px;">
+              <h3>🔧 {{ draft.id ? 'تعديل الحالة' : 'حالة جديدة' }}</h3>
+              <div class="field"><label>اسم الحالة</label><input v-model="draft.title" /></div>
+              <div class="field"><label>الحالة</label>
+                <select v-model="draft.status">
+                  <option value="open">مفتوح</option>
+                  <option value="in_progress">جاري المعالجة</option>
+                  <option value="resolved">منتهى</option>
+                </select>
               </div>
-              <button class="btn" style="width:100%;justify-content:center;margin-top:8px" @click="$refs.file.click()" :disabled="!draft.id">🖼️ رفع صور {{ draft.id ? '' : '(احفظ الحالة أولًا)' }}</button>
-              <input ref="file" type="file" accept="image/*" multiple hidden @change="uploadImages" />
-            </div>
-            <div class="field-row" style="margin-top:6px">
-              <button class="btn primary" style="justify-content:center" @click="saveDefect">💾 حفظ الحالة</button>
-              <button class="btn danger" style="justify-content:center" @click="cancelDefect">✕ إلغاء</button>
+              <div class="field"><label>الوصف</label><textarea v-model="draft.description"></textarea></div>
+              <div class="field-row">
+                <div class="field"><label>الطول (م)</label><input type="number" step="any" v-model.number="draft.length_m" /></div>
+                <div class="field"><label>العرض (م)</label><input type="number" step="any" v-model.number="draft.width_m" /></div>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>المساحة (م²)</label><input type="number" step="any" v-model.number="draft.area_m2" /></div>
+                <div class="field"><label>العدد</label><input type="number" v-model.number="draft.count" /></div>
+              </div>
+              <div class="field">
+                <label>الصور</label>
+                <div class="thumb-row">
+                  <div class="thumb" v-for="im in draft.images" :key="im.id">
+                    <img :src="im.image" /><button class="x" @click="deleteImage(im)">✕</button>
+                  </div>
+                </div>
+                <button class="btn" style="width:100%;justify-content:center;margin-top:8px" @click="$refs.file.click()" :disabled="!draft.id">🖼️ رفع صور {{ draft.id ? '' : '(احفظ الحالة أولًا)' }}</button>
+                <input ref="file" type="file" accept="image/*" multiple hidden @change="uploadImages" />
+              </div>
+              <div class="field-row" style="margin-top:6px">
+                <button class="btn primary" style="justify-content:center" @click="saveDefect">💾 حفظ الحالة</button>
+                <button class="btn danger" style="justify-content:center" @click="cancelDefect">✕ إلغاء</button>
+              </div>
             </div>
           </div>
+
+          <button class="btn" style="width:100%;justify-content:center;margin-top:6px" @click="newDefect">➕ إضافة حالة</button>
         </div>
       </div>
 
@@ -124,17 +143,22 @@
           <div v-if="!roads.length" class="empty">لا توجد طرق بعد — أضف أول طريق.</div>
           <div v-for="r in roads" :key="r.id" class="list-item" :class="{active: selRoad && selRoad.id===r.id}" @click="selectRoad(r.id)">
             <div class="swatch" :style="{background: roadStatusColor(r.status)}"></div>
-            <div class="info"><b>{{ r.segment }}</b><span>{{ r.direction_display }} · {{ r.status_display }}</span></div>
+            <div class="info"><b>{{ r.segment }}</b><span>{{ r.defects.length }} حالة · {{ r.status_display }}</span></div>
             <button class="del" @click.stop="deleteRoad(r)">🗑️</button>
           </div>
-          <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="startPlaceRoad()">➕ إضافة طريق</button>
+          <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="createRoad()">➕ إضافة مقطع</button>
         </div>
 
         <div class="card" v-if="selRoad">
-          <h3>✏️ بيانات الطريق</h3>
+          <h3>✏️ بيانات المقطع</h3>
           <div class="field"><label>المقطع</label><input v-model="selRoad.segment" @change="saveRoad" /></div>
-          
           <div class="field-row">
+            <div class="field"><label>الاتجاه</label>
+              <select v-model="selRoad.direction" @change="saveRoad">
+                <option value="mecca">مكة</option>
+                <option value="jeddah">جدة</option>
+              </select>
+            </div>
             <div class="field"><label>الحالة</label>
               <select v-model="selRoad.status" @change="saveRoad">
                 <option value="critical">حرج</option>
@@ -143,42 +167,27 @@
               </select>
             </div>
           </div>
-
-          <div class="field"><label>الإحداثيات</label>
-            <input :value="selRoad.lat.toFixed(5) + ' , ' + selRoad.lng.toFixed(5)" readonly />
-          </div>
-          <div class="field-row">
-            <button class="btn" style="justify-content:center" @click="startMoveRoad()">📍 تحريك الموقع</button>
-            <button class="btn danger" style="justify-content:center" @click="deleteRoad(selRoad)">🗑️ حذف الطريق</button>
-          </div>
+          <button class="btn danger" style="width:100%;justify-content:center" @click="deleteRoad(selRoad)">🗑️ حذف المقطع وكل حالاته</button>
         </div>
         <div class="card" v-if="selRoad">
           <h3>⚠️ الحالات</h3>
           <div v-if="!selRoad.defects || !selRoad.defects.length" class="empty">لا توجد حالات مسجلة — أضف حالة.</div>
           <div v-for="d in selRoad.defects" :key="d.id" class="list-item" @click="editRoadDefect(d)">
             <div class="swatch" :style="{background: roadStatusColor(d.status)}"></div>
-            <div class="info"><b>{{ d.title || 'حالة بدون اسم' }}</b><span>{{ d.status_display }} · {{ d.direction_display }} · {{ d.images.length }} صورة</span></div>
+            <div class="info"><b>{{ d.title || 'حالة بدون اسم' }}</b><span>{{ d.status_display }} · {{ d.images.length }} صورة</span></div>
             <button class="del" @click.stop="deleteRoadDefect(d)">🗑️</button>
           </div>
           <button class="btn" style="width:100%;justify-content:center;margin-top:6px" @click="newRoadDefect">➕ إضافة حالة للطريق</button>
 
           <div class="card" v-if="roadDraft" style="margin-top:16px;">
             <h3>🔧 {{ roadDraft.id ? 'تعديل الحالة' : 'حالة جديدة' }}</h3>
-            <div class="field"><label>اسم المقطع / الحالة</label><input v-model="roadDraft.title" /></div>
-            <div class="field-row">
-              <div class="field"><label>الاتجاه</label>
-                <select v-model="roadDraft.direction">
-                  <option value="mecca">مكة</option>
-                  <option value="jeddah">جدة</option>
-                </select>
-              </div>
-              <div class="field"><label>الحالة</label>
-                <select v-model="roadDraft.status">
-                  <option value="critical">حرج</option>
-                  <option value="medium">متوسط</option>
-                  <option value="low">منخفض</option>
-                </select>
-              </div>
+            <div class="field"><label>اسم/عنوان الحالة</label><input v-model="roadDraft.title" /></div>
+            <div class="field"><label>الحالة</label>
+              <select v-model="roadDraft.status">
+                <option value="critical">حرج</option>
+                <option value="medium">متوسط</option>
+                <option value="low">منخفض</option>
+              </select>
             </div>
             <div class="field"><label>الملاحظة</label>
               <select v-model="roadDraft.observation">
@@ -194,6 +203,14 @@
               </select>
             </div>
             <div class="field"><label>الوصف</label><textarea v-model="roadDraft.description"></textarea></div>
+
+            <div class="field-row">
+              <div class="field"><label>خط العرض (lat)</label><input type="number" step="any" v-model.number="roadDraft.lat" /></div>
+              <div class="field"><label>خط الطول (lng)</label><input type="number" step="any" v-model.number="roadDraft.lng" /></div>
+            </div>
+            <div class="field">
+              <button class="btn" style="width:100%;justify-content:center" @click="startMoveRoadCase">📍 تحديد موقع الحالة على الخريطة</button>
+            </div>
 
             <div class="field">
               <label>الصور</label>
@@ -215,12 +232,11 @@
     </div>
 
     <div id="admin-map">
-      <div class="draw-toolbar" v-if="placingBridge || movingBridge || placingRoad || movingRoad">
+      <div class="draw-toolbar" v-if="placingBridge || movingBridge || movingRoadCase">
         <span class="draw-hint" v-if="placingBridge">انقر لتحديد موقع الجسر</span>
         <span class="draw-hint" v-else-if="movingBridge">انقر لتحريك الجسر</span>
-        <span class="draw-hint" v-else-if="placingRoad">انقر لتحديد موقع الطريق</span>
-        <span class="draw-hint" v-else-if="movingRoad">انقر لتحريك الطريق</span>
-        <button class="btn danger" @click="placingBridge=false; movingBridge=false; placingRoad=false; movingRoad=false;">✕ إلغاء</button>
+        <span class="draw-hint" v-else-if="movingRoadCase">انقر لتحديد موقع الحالة</span>
+        <button class="btn danger" @click="placingBridge=false; movingBridge=false; movingRoadCase=false;">✕ إلغاء</button>
       </div>
     </div>
   </div>
@@ -230,7 +246,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="/static/js/panel.js?v=2"></script>
+<script src="/static/js/panel.js?v=4"></script>
 </body>
 </html>
 {% endverbatim %}

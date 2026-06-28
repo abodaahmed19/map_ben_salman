@@ -77,9 +77,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# كلمة مرور لوحة التحكم (غيّرها عبر متغيّر البيئة PANEL_PASSWORD)
+PANEL_PASSWORD = os.environ.get("PANEL_PASSWORD", "100200")
+
 REST_FRAMEWORK = {
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
-    # لوحة التحكم المخصّصة تستدعي الـAPI مباشرة بدون مصادقة جلسة (أداة داخلية).
-    # إدارة محمية بكلمة مرور تبقى متاحة عبر /admin/ في Django.
+    # القراءة مفتوحة (صفحة العرض)، والتعديل يتطلب دخول لوحة التحكم بكلمة المرور.
+    "DEFAULT_PERMISSION_CLASSES": ["bridges.permissions.ReadOnlyOrPanelAuthed"],
     "DEFAULT_AUTHENTICATION_CLASSES": [],
 }
