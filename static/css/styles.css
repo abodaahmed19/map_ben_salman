@@ -489,11 +489,17 @@ a { color: var(--mint); }
   .topbar {
     height: 56px; gap: 10px; padding: 0 12px;
   }
-  .brand-lockup { gap: 8px; }
-  .brand-lockup img { height: 30px; }
+  .brand-lockup { gap: 8px; flex: 0 0 auto; }
+  .brand-lockup img { height: 28px; max-width: 38vw; object-fit: contain; }
   .brand-lockup .divider, .brand-lockup .dept { display: none; }
-  .title-block h1 { font-size: 14px; line-height: 1.25; }
-  .topbar .btn { padding: 8px 10px; font-size: 12px; }
+  /* العنوان في التدفق العادي (مش متمركز مطلقًا) حتى لا يركب على اللوجو */
+  .title-block { position: static; transform: none; left: auto; flex: 1 1 auto; min-width: 0; text-align: start; }
+  .title-block h1 {
+    font-size: 12.5px; line-height: 1.25; white-space: normal;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .topbar .spacer { display: none; }
+  .topbar .btn { padding: 7px 9px; font-size: 11.5px; }
 
   #map, #admin-map, .loading { inset-block-start: 56px; }
   .admin-shell { inset-block-start: 56px; }

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="/static/css/styles.css" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=2" />
 </head>
 <body>
 <div id="app" v-cloak>
@@ -141,52 +141,104 @@
         <div class="card">
           <h3>🛣️ الطرق</h3>
           <div v-if="!roads.length" class="empty">لا توجد طرق بعد — أضف أول طريق.</div>
-          <div v-for="r in roads" :key="r.id" class="list-item" :class="{active: selRoad && selRoad.id===r.id}" @click="selectRoad(r.id)">
-            <div class="swatch" :style="{background: roadStatusColor(r.status)}"></div>
-            <div class="info"><b>{{ r.segment }}</b><span>{{ r.defects.length }} حالة · {{ r.status_display }}</span></div>
-            <button class="del" @click.stop="deleteRoad(r)">🗑️</button>
+          <div v-for="r in roads" :key="r.id">
+            <div class="list-item" :class="{active: selRoad && selRoad.id===r.id}" @click="selectRoad(r.id)">
+              <div class="swatch" :style="{background: roadStatusColor(r.status)}"></div>
+              <div class="info"><b>{{ r.segment }}</b><span>{{ r.defects.length }} حالة · {{ r.status_display }}</span></div>
+              <button class="del" @click.stop="deleteRoad(r)">🗑️</button>
+            </div>
+
+            <!-- بيانات المقطع تظهر تحته مباشرة عند تحديده -->
+            <div class="card" v-if="selRoad && selRoad.id===r.id" style="margin-top:8px;margin-bottom:8px;">
+              <h3>✏️ بيانات المقطع</h3>
+              <div class="field"><label>المقطع</label><input v-model="selRoad.segment" @change="saveRoad" /></div>
+              <div class="field-row">
+                <div class="field"><label>الاتجاه</label>
+                  <select v-model="selRoad.direction" @change="saveRoad">
+                    <option value="mecca">مكة</option>
+                    <option value="jeddah">جدة</option>
+                  </select>
+                </div>
+                <div class="field"><label>الحالة</label>
+                  <select v-model="selRoad.status" @change="saveRoad">
+                    <option value="critical">حرج</option>
+                    <option value="medium">متوسط</option>
+                    <option value="low">منخفض</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn danger" style="width:100%;justify-content:center" @click="deleteRoad(selRoad)">🗑️ حذف المقطع وكل حالاته</button>
+            </div>
           </div>
           <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="createRoad()">➕ إضافة مقطع</button>
         </div>
 
         <div class="card" v-if="selRoad">
-          <h3>✏️ بيانات المقطع</h3>
-          <div class="field"><label>المقطع</label><input v-model="selRoad.segment" @change="saveRoad" /></div>
-          <div class="field-row">
-            <div class="field"><label>الاتجاه</label>
-              <select v-model="selRoad.direction" @change="saveRoad">
-                <option value="mecca">مكة</option>
-                <option value="jeddah">جدة</option>
-              </select>
-            </div>
-            <div class="field"><label>الحالة</label>
-              <select v-model="selRoad.status" @change="saveRoad">
-                <option value="critical">حرج</option>
-                <option value="medium">متوسط</option>
-                <option value="low">منخفض</option>
-              </select>
-            </div>
-          </div>
-          <button class="btn danger" style="width:100%;justify-content:center" @click="deleteRoad(selRoad)">🗑️ حذف المقطع وكل حالاته</button>
-        </div>
-        <div class="card" v-if="selRoad">
           <h3>⚠️ الحالات</h3>
           <div v-if="!selRoad.defects || !selRoad.defects.length" class="empty">لا توجد حالات مسجلة — أضف حالة.</div>
-          <div v-for="d in selRoad.defects" :key="d.id" class="list-item" @click="editRoadDefect(d)">
-            <div class="swatch" :style="{background: roadStatusColor(d.status)}"></div>
-            <div class="info"><b>{{ d.title || 'حالة بدون اسم' }}</b><span>{{ d.status_display }} · {{ d.images.length }} صورة</span></div>
-            <button class="del" @click.stop="deleteRoadDefect(d)">🗑️</button>
+
+          <div v-for="d in selRoad.defects" :key="d.id">
+            <div class="list-item" :class="{active: roadDraft && roadDraft.id === d.id}" @click="editRoadDefect(d)">
+              <div class="swatch" :style="{background: roadStatusColor(d.status)}"></div>
+              <div class="info"><b>{{ d.title || 'حالة بدون اسم' }}</b><span>{{ d.status_display }} · {{ d.images.length }} صورة</span></div>
+              <button class="del" @click.stop="deleteRoadDefect(d)">🗑️</button>
+            </div>
+
+            <!-- كرت التعديل يظهر تحت الحالة المحددة مباشرة -->
+            <div class="card" v-if="roadDraft && roadDraft.id === d.id" style="margin-top:8px;margin-bottom:8px;">
+              <h3>🔧 تعديل الحالة</h3>
+              <div class="field"><label>اسم/عنوان الحالة</label><input v-model="roadDraft.title" /></div>
+              <div class="field"><label>الحالة</label>
+                <select v-model="roadDraft.status">
+                  <option value="critical">حرج</option><option value="medium">متوسط</option><option value="low">منخفض</option>
+                </select>
+              </div>
+              <div class="field"><label>الملاحظة</label>
+                <select v-model="roadDraft.observation">
+                  <option value="">-- اختر الملاحظة --</option>
+                  <option value="اسفلت">اسفلت</option>
+                  <option value="أصول جانبي الطريق">أصول جانبي الطريق</option>
+                </select>
+              </div>
+              <div class="field"><label>نوع المعالجة</label>
+                <select v-model="roadDraft.treatment_type">
+                  <option value="treated">معالج</option><option value="untreated">غير معالج</option>
+                </select>
+              </div>
+              <div class="field"><label>الوصف</label><textarea v-model="roadDraft.description"></textarea></div>
+              <div class="field-row">
+                <div class="field"><label>خط العرض (lat)</label><input type="number" step="any" v-model.number="roadDraft.lat" /></div>
+                <div class="field"><label>خط الطول (lng)</label><input type="number" step="any" v-model.number="roadDraft.lng" /></div>
+              </div>
+              <div class="field">
+                <button class="btn" style="width:100%;justify-content:center" @click="startMoveRoadCase">📍 تحديد موقع الحالة على الخريطة</button>
+              </div>
+              <div class="field">
+                <label>الصور</label>
+                <div class="thumb-row">
+                  <div class="thumb" v-for="im in roadDraft.images" :key="im.id">
+                    <img :src="im.image" /><button class="x" @click="deleteRoadImage(im)">✕</button>
+                  </div>
+                </div>
+                <button class="btn" style="width:100%;justify-content:center;margin-top:8px" @click="$refs.roadFile.click()">🖼️ رفع صور</button>
+                <input ref="roadFile" type="file" accept="image/*" multiple hidden @change="uploadRoadImages" />
+              </div>
+              <div class="field-row" style="margin-top:6px">
+                <button class="btn primary" style="justify-content:center" @click="saveRoadDefect">💾 حفظ الحالة</button>
+                <button class="btn danger" style="justify-content:center" @click="cancelRoadDefect">✕ إلغاء</button>
+              </div>
+            </div>
           </div>
+
           <button class="btn" style="width:100%;justify-content:center;margin-top:6px" @click="newRoadDefect">➕ إضافة حالة للطريق</button>
 
-          <div class="card" v-if="roadDraft" style="margin-top:16px;">
-            <h3>🔧 {{ roadDraft.id ? 'تعديل الحالة' : 'حالة جديدة' }}</h3>
+          <!-- كرت إضافة حالة جديدة -->
+          <div class="card" v-if="roadDraft && !roadDraft.id" style="margin-top:8px;">
+            <h3>🔧 حالة جديدة</h3>
             <div class="field"><label>اسم/عنوان الحالة</label><input v-model="roadDraft.title" /></div>
             <div class="field"><label>الحالة</label>
               <select v-model="roadDraft.status">
-                <option value="critical">حرج</option>
-                <option value="medium">متوسط</option>
-                <option value="low">منخفض</option>
+                <option value="critical">حرج</option><option value="medium">متوسط</option><option value="low">منخفض</option>
               </select>
             </div>
             <div class="field"><label>الملاحظة</label>
@@ -198,12 +250,10 @@
             </div>
             <div class="field"><label>نوع المعالجة</label>
               <select v-model="roadDraft.treatment_type">
-                <option value="treated">معالج</option>
-                <option value="untreated">غير معالج</option>
+                <option value="treated">معالج</option><option value="untreated">غير معالج</option>
               </select>
             </div>
             <div class="field"><label>الوصف</label><textarea v-model="roadDraft.description"></textarea></div>
-
             <div class="field-row">
               <div class="field"><label>خط العرض (lat)</label><input type="number" step="any" v-model.number="roadDraft.lat" /></div>
               <div class="field"><label>خط الطول (lng)</label><input type="number" step="any" v-model.number="roadDraft.lng" /></div>
@@ -211,21 +261,11 @@
             <div class="field">
               <button class="btn" style="width:100%;justify-content:center" @click="startMoveRoadCase">📍 تحديد موقع الحالة على الخريطة</button>
             </div>
-
-            <div class="field">
-              <label>الصور</label>
-              <div class="thumb-row">
-                <div class="thumb" v-for="im in roadDraft.images" :key="im.id">
-                  <img :src="im.image" /><button class="x" @click="deleteRoadImage(im)">✕</button>
-                </div>
-              </div>
-              <button class="btn" style="width:100%;justify-content:center;margin-top:8px" @click="$refs.roadFile.click()" :disabled="!roadDraft.id">🖼️ رفع صور {{ roadDraft.id ? '' : '(احفظ الحالة أولًا)' }}</button>
-              <input ref="roadFile" type="file" accept="image/*" multiple hidden @change="uploadRoadImages" />
-            </div>
             <div class="field-row" style="margin-top:6px">
               <button class="btn primary" style="justify-content:center" @click="saveRoadDefect">💾 حفظ الحالة</button>
               <button class="btn danger" style="justify-content:center" @click="cancelRoadDefect">✕ إلغاء</button>
             </div>
+            <p class="mini" style="margin-top:8px;color:var(--muted);font-size:12px">احفظ الحالة أولًا ثم افتحها لرفع الصور.</p>
           </div>
         </div>
       </div>
@@ -246,7 +286,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="/static/js/panel.js?v=4"></script>
+<script src="/static/js/panel.js?v=7"></script>
 </body>
 </html>
 {% endverbatim %}

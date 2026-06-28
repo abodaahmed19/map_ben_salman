@@ -15,8 +15,10 @@ const DIR = { mecca: "#a78bfa", jeddah: "#38bdf8" };
 const PALETTE = ["#2563eb", "#dc2626", "#ea580c", "#16a34a", "#a78bfa", "#38bdf8", "#fb7185", "#34d399", "#fbbf24"];
 
 function baseLayers() {
-  const satellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Holy Makkah" });
-  const streets = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 20, attribution: "© OpenStreetMap, © CARTO" });
+  // maxNativeZoom = أقصى مستوى فيه صور Esri فعلية للمنطقة؛ الأعلى يُكبَّر من نفس الصور
+  // (يمنع بلاطة "Map data not yet available" ويمنع الأسود)
+  const satellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, maxNativeZoom: 17, attribution: "Holy Makkah" });
+  const streets = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, maxNativeZoom: 19, attribution: "© OpenStreetMap, © Holy Makkah" });
   return { satellite, streets };
 }
 function bridgeIcon(color, selected) {
@@ -65,7 +67,7 @@ createApp({
   },
   methods: {
     initMap() {
-      this.map = L.map("map", { zoomControl: false, maxZoom: 20 }).setView(CENTER, ZOOM);
+      this.map = L.map("map", { zoomControl: false, maxZoom: 19 }).setView(CENTER, ZOOM);
       L.control.zoom({ position: "topleft" }).addTo(this.map);
       const { satellite, streets } = baseLayers();
       satellite.addTo(this.map);
@@ -73,6 +75,8 @@ createApp({
       // تجميع الماركرات: يظهر عدد العناصر في المنطقة، والضغط يقرّب
       this.cluster = L.markerClusterGroup({
         maxClusterRadius: 52, showCoverageOnHover: false, spiderfyOnMaxZoom: true,
+        animate: false,                  // بدون أنيميشن وقت الزووم → النقاط تظهر في مكانها الصح فورًا
+        animateAddingMarkers: false,
         iconCreateFunction(c) {
           const n = c.getChildCount();
           const size = n < 10 ? 40 : n < 50 ? 48 : 56;

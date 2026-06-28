@@ -70,9 +70,9 @@ createApp({
     },
 
     initMap() {
-      this.map = L.map("admin-map", { maxZoom: 20 }).setView(CENTER, ZOOM);
-      const satellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Esri" });
-      const streets = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 20, attribution: "© CARTO" });
+      this.map = L.map("admin-map", { maxZoom: 19 }).setView(CENTER, ZOOM);
+      const satellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, maxNativeZoom: 17, attribution: "Holy Makkah" });
+      const streets = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, maxNativeZoom: 19, attribution: "© Holy Makkah" });
       satellite.addTo(this.map);
       L.control.layers({ "قمر صناعي": satellite, "خريطة شوارع": streets }, {}).addTo(this.map);
       this.map.on("click", e => this.onMapClick(e));
