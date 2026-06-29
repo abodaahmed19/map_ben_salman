@@ -116,6 +116,10 @@ class RoadDefect(models.Model):
         ("treated", "معالج"),
         ("untreated", "غير معالج"),
     ]
+    DIRECTION = [
+        ("mecca", "مكة"),
+        ("jeddah", "جدة"),
+    ]
 
     STATUS_COLORS = {
         "critical": "rgb(220, 38, 38)",
@@ -126,6 +130,7 @@ class RoadDefect(models.Model):
     road = models.ForeignKey(Road, related_name="defects", on_delete=models.CASCADE, verbose_name="الطريق")
     title = models.CharField("اسم/عنوان الحالة", max_length=200, blank=True)
     status = models.CharField("الحالة", max_length=20, choices=STATUS, default="medium")
+    direction = models.CharField("الاتجاه", max_length=20, choices=DIRECTION, default="mecca")
     observation = models.CharField("الملاحظة", max_length=255, blank=True, help_text="اسفلت - أصول جانبي الطريق")
     description = models.TextField("الوصف", blank=True)
     treatment_type = models.CharField("نوع المعالجة", max_length=20, choices=TREATMENT, default="untreated")

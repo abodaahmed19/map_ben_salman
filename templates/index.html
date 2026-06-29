@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="/static/css/styles.css?v=3" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=4" />
 </head>
 <body>
 <div id="app" v-cloak>
@@ -47,12 +47,19 @@
         </div>
       </div>
       <div class="chip-group">
-        <span class="chip-label">حالة المعالجة</span>
+        <span class="chip-label">نوع الملاحظة</span>
         <div class="chips">
-          <button class="chip" :class="{active: fTreatment===''}" @click="fTreatment=''">الكل</button>
-          <button class="chip" :class="{active: fTreatment==='treated'}" style="--chip:#16a34a" @click="fTreatment = fTreatment==='treated' ? '' : 'treated'"><i class="dot"></i>معالج</button>
-          <button class="chip" :class="{active: fTreatment==='untreated'}" style="--chip:#dc2626" @click="fTreatment = fTreatment==='untreated' ? '' : 'untreated'"><i class="dot"></i>غير معالج</button>
+          <button class="chip" :class="{active: fObservation===''}" @click="fObservation=''">الكل</button>
+          <button class="chip" :class="{active: fObservation==='اسفلت'}" style="--chip:#34d399" @click="fObservation = fObservation==='اسفلت' ? '' : 'اسفلت'"><i class="dot"></i>اسفلت</button>
+          <button class="chip" :class="{active: fObservation==='أصول جانبي الطريق'}" style="--chip:#fbbf24" @click="fObservation = fObservation==='أصول جانبي الطريق' ? '' : 'أصول جانبي الطريق'"><i class="dot"></i>أصول جانبي الطريق</button>
         </div>
+      </div>
+      <div class="chip-group">
+        <span class="chip-label">نوع العيب</span>
+        <select v-model="fDefectType" class="filter-select">
+          <option value="">الكل</option>
+          <option v-for="t in uniqueRoadDefectTypes" :value="t">{{ t }}</option>
+        </select>
       </div>
       <div class="chip-group">
         <span class="chip-label">الحالة</span>
@@ -66,13 +73,11 @@
     </template>
     <template v-else-if="filterType === 'bridges'">
       <div class="chip-group">
-        <span class="chip-label">حالة المعالجة</span>
-        <div class="chips">
-          <button class="chip" :class="{active: fbTreatment===''}" @click="fbTreatment=''">الكل</button>
-          <button class="chip" :class="{active: fbTreatment==='open'}" style="--chip:#ea580c" @click="fbTreatment = fbTreatment==='open' ? '' : 'open'"><i class="dot"></i>مفتوح</button>
-          <button class="chip" :class="{active: fbTreatment==='in_progress'}" style="--chip:#38bdf8" @click="fbTreatment = fbTreatment==='in_progress' ? '' : 'in_progress'"><i class="dot"></i>جاري المعالجة</button>
-          <button class="chip" :class="{active: fbTreatment==='resolved'}" style="--chip:#22c55e" @click="fbTreatment = fbTreatment==='resolved' ? '' : 'resolved'"><i class="dot"></i>منتهى</button>
-        </div>
+        <span class="chip-label">نوع العيب</span>
+        <select v-model="fbDefectType" class="filter-select">
+          <option value="">الكل</option>
+          <option v-for="t in uniqueBridgeDefectTypes" :value="t">{{ t }}</option>
+        </select>
       </div>
       <div class="chip-group">
         <span class="chip-label">الحالة</span>
@@ -87,7 +92,7 @@
     </template>
     <div class="filter-actions">
       <button class="count-chip" @click="zoomToVisible" title="تقريب على العناصر المعروضة">
-        <span>{{ filterType === 'bridges' ? 'الجسور' : filterType === 'roads' ? 'الحالات' : 'الإجمالي' }}</span>
+        <span>{{ filterType === 'bridges' ? 'حالات الجسور' : filterType === 'roads' ? 'حالات الطرق' : 'الإجمالي' }}</span>
         <b>{{ visibleCount }}</b>
         <small>🔍</small>
       </button>
@@ -100,11 +105,12 @@
    <div class="modal">
     <div class="panel-head">
       <button class="close" @click="closePanel">✕</button>
-      <h2>{{ selectedType === 'bridge' ? selected.name : (selected.title || 'حالة طريق') }}</h2>
+      <h2>{{ selected.title || (selectedType === 'bridge' ? selected.name : 'حالة') }}</h2>
       <div class="meta">
         <span v-if="selectedType === 'roadcase' && selected.direction_display" class="direction-badge">{{ selected.direction_display }}</span>
         <span class="status-badge" :class="'status-'+selected.status">{{ selected.status_display }}</span>
         <span v-if="selectedType === 'roadcase' && selected.road_segment" class="chip">🛣️ {{ selected.road_segment }}</span>
+        <span v-if="selectedType === 'bridgecase' && selected.bridge_name" class="chip">🌉 {{ selected.bridge_name }}</span>
       </div>
     </div>
     <div class="panel-body">
@@ -113,35 +119,23 @@
         الموقع على خرائط جوجل
       </a>
 
-      <!-- جسر: قائمة الحالات -->
-      <template v-if="selectedType === 'bridge'">
-        <div class="kv">
-          <div class="cell"><span>عدد الحالات</span><b>{{ selected.defects.length }}</b></div>
-          <div class="cell" v-if="selected.open_count !== undefined"><span>الحالات المفتوحة</span><b>{{ selected.open_count }}</b></div>
+      <!-- حالة جسر مفردة -->
+      <template v-if="selectedType === 'bridgecase'">
+        <div class="gallery" v-if="selected.images && selected.images.length" style="margin-bottom: 14px;">
+          <img v-for="(im, idx) in selected.images" :key="im.id" :src="im.image" :alt="im.caption || selected.title" @click.stop="openImages(selected, idx)" style="width: 100%; height: 170px; object-fit: cover; border-radius: 9px;" />
         </div>
-        <div class="coord-line"><span>📍 الإحداثيات</span><b>{{ selected.lat.toFixed(5) }} , {{ selected.lng.toFixed(5) }}</b></div>
-        <div class="section-title">الحالات المرصودة <span class="count">{{ selected.defects.length }}</span></div>
-        <div v-if="!selected.defects.length" class="empty">لا توجد حالات مسجّلة ✅</div>
-        <div v-for="d in selected.defects" :key="d.id" class="defect" :class="'st-'+d.status" @click="openImages(d)">
-          <div class="gallery" v-if="d.images && d.images.length" style="margin-bottom: 8px;">
-            <img v-for="(im, idx) in d.images" :key="im.id" :src="im.image" :alt="im.caption || d.title" @click.stop="openImages(d, idx)" style="width: 100%; height: 160px; object-fit: cover; border-radius: 8px;" />
-          </div>
-          <div class="row">
-            <h3>{{ d.title || 'حالة بدون اسم' }}</h3>
-            <span class="status-badge" :class="'status-'+d.status">{{ d.status_display }}</span>
-          </div>
-          <p v-if="d.description">{{ d.description }}</p>
-          <div class="metrics">
-            <div class="metric"><span>الطول</span><b>{{ d.length_m }} م</b></div>
-            <div class="metric"><span>العرض</span><b>{{ d.width_m }} م</b></div>
-            <div class="metric"><span>المساحة</span><b>{{ d.area_m2 }} م²</b></div>
-            <div class="metric"><span>العدد</span><b>{{ d.count }}</b></div>
-          </div>
+        <p v-if="selected.description" class="desc">{{ selected.description }}</p>
+        <div class="metrics">
+          <div class="metric"><span>الطول</span><b>{{ selected.length_m }} م</b></div>
+          <div class="metric"><span>العرض</span><b>{{ selected.width_m }} م</b></div>
+          <div class="metric"><span>المساحة</span><b>{{ selected.area_m2 }} م²</b></div>
+          <div class="metric"><span>العدد</span><b>{{ selected.count }}</b></div>
+          <div class="metric"><span>الإحداثيات</span><b>{{ selected.lat.toFixed(5) }} , {{ selected.lng.toFixed(5) }}</b></div>
         </div>
       </template>
 
       <!-- حالة طريق مفردة -->
-      <template v-else>
+      <template v-else-if="selectedType === 'roadcase'">
         <div class="gallery" v-if="selected.images && selected.images.length" style="margin-bottom: 14px;">
           <img v-for="(im, idx) in selected.images" :key="im.id" :src="im.image" :alt="im.caption || selected.title" @click.stop="openImages(selected, idx)" style="width: 100%; height: 170px; object-fit: cover; border-radius: 9px;" />
         </div>
@@ -149,7 +143,6 @@
         <div class="metrics">
           <div class="metric" v-if="selected.direction_display"><span>الاتجاه</span><b>{{ selected.direction_display }}</b></div>
           <div class="metric" v-if="selected.observation"><span>الملاحظة</span><b>{{ selected.observation }}</b></div>
-          <div class="metric" v-if="selected.treatment_type_display"><span>المعالجة</span><b>{{ selected.treatment_type_display }}</b></div>
           <div class="metric"><span>الإحداثيات</span><b>{{ selected.lat.toFixed(4) }}, {{ selected.lng.toFixed(4) }}</b></div>
         </div>
       </template>
@@ -173,45 +166,44 @@
           <div class="kpicard"><b style="color:#dc2626">{{ visibleRoadCases.filter(d=>d.status==='critical').length }}</b><span>حرج</span></div>
         </div>
         <div class="kpi-row" v-else>
-          <div class="kpicard"><b>{{ visibleBridges.length }}</b><span>إجمالي الجسور</span></div>
-          <div class="kpicard"><b style="color:#dc2626">{{ visibleBridges.filter(b=>b.status==='critical').length }}</b><span>حرجة</span></div>
-          <div class="kpicard"><b>{{ visibleBridges.reduce((s,b)=>s+(b.defects?b.defects.length:0),0) }}</b><span>إجمالي الحالات</span></div>
-          <div class="kpicard"><b style="color:#ea580c">{{ visibleBridges.reduce((s,b)=>s+(b.defects?b.defects.filter(d=>d.status==='open').length:0),0) }}</b><span>حالات مفتوحة</span></div>
+          <div class="kpicard"><b>{{ new Set(visibleBridges.map(d=>d.bridge_name)).size }}</b><span>إجمالي الجسور</span></div>
+          <div class="kpicard"><b style="color:#dc2626">{{ new Set(visibleBridges.filter(d=>d.bridge_status==='critical').map(d=>d.bridge_name)).size }}</b><span>جسور حرجة</span></div>
+          <div class="kpicard"><b>{{ visibleBridges.length }}</b><span>إجمالي الحالات</span></div>
+          <div class="kpicard"><b style="color:#ea580c">{{ visibleBridges.filter(d=>d.status==='open').length }}</b><span>حالات مفتوحة</span></div>
         </div>
 
         <!-- رسوم -->
         <div class="chart-grid" v-if="dashMode === 'roads'">
           <div class="chart-card"><h3>الحالة (الخطورة)</h3><div class="chartbox"><canvas id="ch1"></canvas></div></div>
-          <div class="chart-card"><h3>حالة المعالجة</h3><div class="chartbox"><canvas id="ch2"></canvas></div></div>
           <div class="chart-card"><h3>الاتجاه</h3><div class="chartbox"><canvas id="ch3"></canvas></div></div>
           <div class="chart-card"><h3>الحالات حسب المقطع</h3><div class="chartbox"><canvas id="ch4"></canvas></div></div>
         </div>
         <div class="chart-grid" v-else>
           <div class="chart-card"><h3>حالة الجسور</h3><div class="chartbox"><canvas id="ch1"></canvas></div></div>
-          <div class="chart-card"><h3>حالات الجسور حسب المعالجة</h3><div class="chartbox"><canvas id="ch2"></canvas></div></div>
         </div>
 
         <!-- جدول -->
         <div class="dash-table">
           <table v-if="dashMode === 'roads'">
-            <thead><tr><th>الحالة</th><th>المقطع</th><th>الاتجاه</th><th>المعالجة</th><th>الخطورة</th></tr></thead>
+            <thead><tr><th>الحالة</th><th>المقطع</th><th>الاتجاه</th><th>الخطورة</th></tr></thead>
             <tbody>
               <tr v-for="d in visibleRoadCases" :key="d.id" @click="focusFromDash(d,'roadcase')">
                 <td>{{ d.title || '—' }}</td>
                 <td>{{ d.road_segment }}</td>
                 <td>{{ d.direction_display }}</td>
-                <td><span class="badge" :style="{background: d.treatment_type==='treated' ? '#16a34a' : '#dc2626'}">{{ d.treatment_type_display }}</span></td>
                 <td><span class="badge" :style="{background: d.color}">{{ d.status_display }}</span></td>
               </tr>
             </tbody>
           </table>
           <table v-else>
-            <thead><tr><th>الجسر</th><th>الحالة</th><th>عدد الحالات</th></tr></thead>
+            <thead><tr><th>الحالة</th><th>الجسر</th><th>حالة الجسر</th></tr></thead>
             <tbody>
-              <tr v-for="b in visibleBridges" :key="b.id" @click="focusFromDash(b,'bridge')">
-                <td>{{ b.name }}</td>
-                <td><span class="badge" :style="{background: b.color}">{{ b.status_display }}</span></td>
-                <td>{{ b.defects.length }}</td>
+              <tr v-for="d in visibleBridges" :key="d.id" @click="focusFromDash(d,'bridgecase')">
+                <td>{{ d.title || '—' }}</td>
+                <td>{{ d.bridge_name }}</td>
+                <td><span class="badge" :style="{background: d.bridge_status==='critical' ? '#dc2626' : d.bridge_status==='operational' ? '#ea580c' : d.bridge_status==='maintenance' ? '#d97706' : '#16a34a'}">
+                  {{ d.bridge_status==='critical' ? 'حرج' : d.bridge_status==='operational' ? 'ضعيف' : d.bridge_status==='maintenance' ? 'مقبول' : 'جيد' }}
+                </span></td>
               </tr>
             </tbody>
           </table>
@@ -244,7 +236,7 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="/static/js/viewer.js?v=8"></script>
+<script src="/static/js/viewer.js?v=12"></script>
 </body>
 </html>
 {% endverbatim %}

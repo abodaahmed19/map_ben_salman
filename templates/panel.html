@@ -98,7 +98,12 @@
             <!-- بطاقة تعديل الحالة (تظهر تحت العنصر مباشرة إذا كان هو المحدد) -->
             <div class="card" v-if="draft && draft.id === d.id" style="margin-top: 8px; margin-bottom: 8px;">
               <h3>🔧 {{ draft.id ? 'تعديل الحالة' : 'حالة جديدة' }}</h3>
-              <div class="field"><label>اسم الحالة</label><input v-model="draft.title" /></div>
+              <div class="field"><label>اسم الحالة</label>
+                <input v-model="draft.title" list="bridge-defect-titles" />
+                <datalist id="bridge-defect-titles">
+                  <option v-for="t in uniqueBridgeDefectTypes" :value="t">{{ t }}</option>
+                </datalist>
+              </div>
               <div class="field"><label>الحالة</label>
                 <select v-model="draft.status">
                   <option value="open">مفتوح</option>
@@ -187,7 +192,12 @@
             <!-- كرت التعديل يظهر تحت الحالة المحددة مباشرة -->
             <div class="card" v-if="roadDraft && roadDraft.id === d.id" style="margin-top:8px;margin-bottom:8px;">
               <h3>🔧 تعديل الحالة</h3>
-              <div class="field"><label>اسم/عنوان الحالة</label><input v-model="roadDraft.title" /></div>
+              <div class="field"><label>اسم/عنوان الحالة</label>
+                <input v-model="roadDraft.title" list="road-defect-titles" />
+                <datalist id="road-defect-titles">
+                  <option v-for="t in uniqueRoadDefectTypes" :value="t">{{ t }}</option>
+                </datalist>
+              </div>
               <div class="field"><label>الحالة</label>
                 <select v-model="roadDraft.status">
                   <option value="critical">حرج</option><option value="medium">متوسط</option><option value="low">منخفض</option>
@@ -198,11 +208,6 @@
                   <option value="">-- اختر الملاحظة --</option>
                   <option value="اسفلت">اسفلت</option>
                   <option value="أصول جانبي الطريق">أصول جانبي الطريق</option>
-                </select>
-              </div>
-              <div class="field"><label>نوع المعالجة</label>
-                <select v-model="roadDraft.treatment_type">
-                  <option value="treated">معالج</option><option value="untreated">غير معالج</option>
                 </select>
               </div>
               <div class="field"><label>الوصف</label><textarea v-model="roadDraft.description"></textarea></div>
@@ -235,7 +240,12 @@
           <!-- كرت إضافة حالة جديدة -->
           <div class="card" v-if="roadDraft && !roadDraft.id" style="margin-top:8px;">
             <h3>🔧 حالة جديدة</h3>
-            <div class="field"><label>اسم/عنوان الحالة</label><input v-model="roadDraft.title" /></div>
+            <div class="field"><label>اسم/عنوان الحالة</label>
+              <input v-model="roadDraft.title" list="road-defect-titles" />
+              <datalist id="road-defect-titles">
+                <option v-for="t in uniqueRoadDefectTypes" :value="t">{{ t }}</option>
+              </datalist>
+            </div>
             <div class="field"><label>الحالة</label>
               <select v-model="roadDraft.status">
                 <option value="critical">حرج</option><option value="medium">متوسط</option><option value="low">منخفض</option>
@@ -246,11 +256,6 @@
                 <option value="">-- اختر الملاحظة --</option>
                 <option value="اسفلت">اسفلت</option>
                 <option value="أصول جانبي الطريق">أصول جانبي الطريق</option>
-              </select>
-            </div>
-            <div class="field"><label>نوع المعالجة</label>
-              <select v-model="roadDraft.treatment_type">
-                <option value="treated">معالج</option><option value="untreated">غير معالج</option>
               </select>
             </div>
             <div class="field"><label>الوصف</label><textarea v-model="roadDraft.description"></textarea></div>
@@ -286,7 +291,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="/static/js/panel.js?v=7"></script>
+<script src="/static/js/panel.js?v=9"></script>
 </body>
 </html>
 {% endverbatim %}

@@ -45,6 +45,18 @@ createApp({
       toastMsg: "", toastT: null,
     };
   },
+  computed: {
+    uniqueBridgeDefectTypes() {
+      const types = [];
+      this.bridges.forEach(b => (b.defects || []).forEach(d => { if (d.title) types.push(d.title); }));
+      return [...new Set(types)].sort();
+    },
+    uniqueRoadDefectTypes() {
+      const types = [];
+      this.roads.forEach(r => (r.defects || []).forEach(d => { if (d.title) types.push(d.title); }));
+      return [...new Set(types)].sort();
+    }
+  },
   async mounted() {
     this.initMap();
     await this.load();
@@ -247,14 +259,14 @@ createApp({
     /* ----- حالات الطرق (ماركر مستقل لكل حالة) ----- */
     toRoadDraft(d) {
       return { id: d.id, title: d.title, status: d.status, observation: d.observation,
-        description: d.description, treatment_type: d.treatment_type, lat: d.lat, lng: d.lng,
+        description: d.description, lat: d.lat, lng: d.lng,
         images: JSON.parse(JSON.stringify(d.images || [])) };
     },
     newRoadDefect() {
       if (!this.selRoad) return;
       const c = this.map.getCenter();
       this.roadDraft = { id: null, title: "", status: "medium", observation: "", description: "",
-        treatment_type: "", lat: c.lat, lng: c.lng, images: [] };
+        lat: c.lat, lng: c.lng, images: [] };
       this.toast("حدّد موقع الحالة بزر «تحديد الموقع» أو الإحداثيات");
     },
     editRoadDefect(d) { this.roadDraft = this.toRoadDraft(d); this.render(); },
@@ -263,7 +275,7 @@ createApp({
       if (!this.selRoad) return;
       const d = this.roadDraft;
       const body = { road: this.selRoad.id, title: d.title || "", status: d.status,
-        observation: d.observation || "", description: d.description || "", treatment_type: d.treatment_type || "",
+        observation: d.observation || "", description: d.description || "",
         lat: Number(d.lat), lng: Number(d.lng) };
       try {
         let saved = d.id ? await api("PUT", `/api/road-defects/${d.id}/`, body) : await api("POST", "/api/road-defects/", body);

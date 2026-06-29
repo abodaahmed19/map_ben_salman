@@ -21,39 +21,59 @@ function baseLayers() {
   const streets = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, maxNativeZoom: 19, attribution: "© OpenStreetMap, © Holy Makkah" });
   return { satellite, streets };
 }
-function bridgeIcon(color, selected) {
-  return L.divIcon({ className: "", html: `<div class="bridge-marker ${selected ? "selected" : ""}" style="--bc:${color}">${BRIDGE_SVG}</div>`, iconSize: [40, 40], iconAnchor: [20, 40] });
+// نقطة صغيرة ملوّنة بحالة العنصر (بدون أيقونة)
+function dotIcon(color, selected) {
+  return L.divIcon({ className: "", html: `<div class="map-dot ${selected ? "selected" : ""}" style="--bc:${color}"></div>`, iconSize: [14, 14], iconAnchor: [7, 7] });
 }
-function roadCaseIcon(color, selected) {
-  return L.divIcon({ className: "", html: `<div class="road-marker ${selected ? "selected" : ""}" style="--bc:${color}">${ROAD_SVG}</div>`, iconSize: [38, 38], iconAnchor: [19, 38] });
-}
+function bridgeIcon(color, selected) { return dotIcon(color, selected); }
+function roadCaseIcon(color, selected) { return dotIcon(color, selected); }
 function countBy(arr, fn) { const c = {}; arr.forEach(x => { const k = fn(x) || "—"; c[k] = (c[k] || 0) + 1; }); return c; }
 
 createApp({
   data() {
     return {
-      bridges: [], roadCases: [],
+      bridges: [], roadCases: [], bridgeCases: [],
       selected: null, selectedType: null,
       lightbox: null, loading: true,
       map: null, cluster: null, markers: {}, slideTimer: null,
       filterType: "all",                       // "all" | "roads" | "bridges"
-      fDirection: "", fTreatment: "", fStatus: "",
-      fbTreatment: "", fbStatus: "",
+      fDirection: "", fObservation: "", fDefectType: "", fStatus: "",
+      fbDefectType: "", fbStatus: "",
       showDash: false,
     };
   },
   computed: {
     currentImage() { return this.lightbox && this.lightbox.defect.images[this.lightbox.index]; },
     gmapsUrl() { return this.selected ? `https://www.google.com/maps/search/?api=1&query=${this.selected.lat},${this.selected.lng}` : "#"; },
-    visibleBridges() { return this.filterType === "roads" ? [] : this.bridges.filter(b => this.bridgeMatches(b)); },
+    visibleBridges() { return this.filterType === "roads" ? [] : this.bridgeCases.filter(b => this.bridgeCaseMatches(b)); },
     visibleRoadCases() { return this.filterType === "bridges" ? [] : this.roadCases.filter(c => this.caseMatches(c)); },
     visibleCount() { return this.visibleBridges.length + this.visibleRoadCases.length; },
     dashMode() { return this.filterType === "bridges" ? "bridges" : "roads"; },
+    bridgeKpis() {
+      const v = this.visibleBridges;
+      const uniqueBridges = new Set(v.map(d => d.bridge_name));
+      const criticalBridges = new Set(v.filter(d => d.bridge_status === 'critical').map(d => d.bridge_name));
+      const openCases = v.filter(d => d.status === 'open').length;
+      return {
+        totalBridges: uniqueBridges.size,
+        criticalBridges: criticalBridges.size,
+        totalCases: v.length,
+        openCases: openCases
+      };
+    },
+    uniqueRoadDefectTypes() {
+      const types = this.roadCases.map(c => c.title).filter(Boolean);
+      return [...new Set(types)].sort();
+    },
+    uniqueBridgeDefectTypes() {
+      const types = this.bridgeCases.map(c => c.title).filter(Boolean);
+      return [...new Set(types)].sort();
+    }
   },
   watch: {
     filterType() { this.applyFilter(); },
-    fDirection() { this.applyFilter(); }, fTreatment() { this.applyFilter(); }, fStatus() { this.applyFilter(); },
-    fbTreatment() { this.applyFilter(); }, fbStatus() { this.applyFilter(); },
+    fDirection() { this.applyFilter(); }, fObservation() { this.applyFilter(); }, fDefectType() { this.applyFilter(); }, fStatus() { this.applyFilter(); },
+    fbDefectType() { this.applyFilter(); }, fbStatus() { this.applyFilter(); },
   },
   async mounted() {
     this.initMap();
@@ -91,17 +111,28 @@ createApp({
         const roads = await roadsRes.json();
         this.roadCases = [];
         roads.forEach(r => (r.defects || []).forEach(d => {
-          this.roadCases.push({ ...d, road_segment: r.segment, road_direction: r.direction, direction_display: r.direction_display });
+          this.roadCases.push({ ...d, road_segment: r.segment, road_direction: d.direction, direction_display: d.direction_display });
+        }));
+        this.bridgeCases = [];
+        this.bridges.forEach(b => (b.defects || []).forEach(d => {
+          this.bridgeCases.push({
+            ...d,
+            bridge_name: b.name,
+            bridge_status: b.status,
+            lat: b.lat,
+            lng: b.lng,
+            color: DEFECT_STATUS[d.status] || "#3c7a5a"
+          });
         }));
         this.render();
       } finally { this.loading = false; }
     },
     render() {
-      this.bridges.forEach(b => {
-        if (b.lat == null || b.lng == null) return;
-        const m = L.marker([b.lat, b.lng], { icon: bridgeIcon(b.color, false) });
-        m.on("click", () => this.openItem(b.id, "bridge"));
-        this.markers[`bridge-${b.id}`] = { marker: m, type: "bridge", data: b };
+      this.bridgeCases.forEach(d => {
+        if (d.lat == null || d.lng == null) return;
+        const m = L.marker([d.lat, d.lng], { icon: bridgeIcon(d.color, false) });
+        m.on("click", () => this.openItem(d.id, "bridgecase"));
+        this.markers[`bridgecase-${d.id}`] = { marker: m, type: "bridgecase", data: d };
       });
       this.roadCases.forEach(d => {
         if (d.lat == null || d.lng == null) return;
@@ -113,21 +144,22 @@ createApp({
       setTimeout(() => this.map.invalidateSize(), 200);
       window.addEventListener("resize", () => this.map.invalidateSize());
     },
-    bridgeMatches(b) {
-      if (this.fbStatus && b.status !== this.fbStatus) return false;
-      if (this.fbTreatment && !(b.defects || []).some(d => d.status === this.fbTreatment)) return false;
+    bridgeCaseMatches(d) {
+      if (this.fbStatus && d.bridge_status !== this.fbStatus) return false;
+      if (this.fbDefectType && d.title !== this.fbDefectType) return false;
       return true;
     },
     caseMatches(d) {
       if (this.fStatus && d.status !== this.fStatus) return false;
-      if (this.fTreatment && d.treatment_type !== this.fTreatment) return false;
       if (this.fDirection && d.road_direction !== this.fDirection) return false;
+      if (this.fObservation && d.observation !== this.fObservation) return false;
+      if (this.fDefectType && d.title !== this.fDefectType) return false;
       return true;
     },
     matches(type, data) {
       if (this.filterType === "roads") return type === "roadcase" && this.caseMatches(data);
-      if (this.filterType === "bridges") return type === "bridge" && this.bridgeMatches(data);
-      return type === "bridge" ? this.bridgeMatches(data) : this.caseMatches(data);
+      if (this.filterType === "bridges") return type === "bridgecase" && this.bridgeCaseMatches(data);
+      return type === "bridgecase" ? this.bridgeCaseMatches(data) : this.caseMatches(data);
     },
     applyFilter(fit = true) {
       const bounds = [], show = [];
@@ -144,9 +176,9 @@ createApp({
       Object.values(this.markers).forEach(({ marker, type, data }) => { if (this.matches(type, data)) bounds.push(marker.getLatLng()); });
       if (bounds.length) this.map.fitBounds(bounds, { padding: [60, 70], maxZoom: 17 });
     },
-    iconFor(type, data, selected) { return type === "bridge" ? bridgeIcon(data.color, selected) : roadCaseIcon(data.color, selected); },
+    iconFor(type, data, selected) { return type === "bridgecase" ? bridgeIcon(data.color, selected) : roadCaseIcon(data.color, selected); },
     openItem(id, type) {
-      this.selected = (type === "bridge" ? this.bridges : this.roadCases).find(x => x.id === id) || null;
+      this.selected = (type === "bridgecase" ? this.bridgeCases : this.roadCases).find(x => x.id === id) || null;
       this.selectedType = type;
       Object.values(this.markers).forEach(({ marker, type: mt, data }) => marker.setIcon(this.iconFor(mt, data, mt === type && data.id === id)));
       if (this.selected) this.map.panTo([this.selected.lat, this.selected.lng]);
@@ -183,17 +215,15 @@ createApp({
       Chart.defaults.font.family = "Tajawal, sans-serif";
       if (this.dashMode === "bridges") {
         const v = this.visibleBridges;
-        const bs = countBy(v, b => b.status_display);
-        this.doughnut("ch1", Object.keys(bs), Object.values(bs), Object.keys(bs).map((k, i) => PALETTE[i % PALETTE.length]));
-        const defs = v.flatMap(b => b.defects || []);
-        const ds = countBy(defs, d => d.status_display);
-        this.bar("ch2", Object.keys(ds), Object.values(ds), "#38bdf8");
+        const bs = countBy(v, d => d.bridge_status);
+        const statusMap = { critical: "حرج", operational: "ضعيف", maintenance: "مقبول", good: "جيد" };
+        const bsMapped = {};
+        Object.entries(bs).forEach(([k, val]) => { bsMapped[statusMap[k] || k] = val; });
+        this.doughnut("ch1", Object.keys(bsMapped), Object.values(bsMapped), Object.keys(bsMapped).map(k => (k === "حرج" ? "#dc2626" : k === "ضعيف" ? "#ea580c" : k === "مقبول" ? "#d97706" : "#16a34a")));
       } else {
         const v = this.visibleRoadCases;
         const st = countBy(v, d => d.status_display);
         this.doughnut("ch1", Object.keys(st), Object.values(st), Object.keys(st).map(k => (k === "حرج" ? ROAD_STATUS.critical : k === "متوسط" ? ROAD_STATUS.medium : ROAD_STATUS.low)));
-        const tr = countBy(v, d => d.treatment_type_display);
-        this.doughnut("ch2", Object.keys(tr), Object.values(tr), Object.keys(tr).map(k => (k === "معالج" ? TREAT.treated : TREAT.untreated)));
         const di = countBy(v, d => d.direction_display);
         this.doughnut("ch3", Object.keys(di), Object.values(di), Object.keys(di).map(k => (k === "جدة" ? DIR.jeddah : DIR.mecca)));
         const sg = countBy(v, d => d.road_segment);

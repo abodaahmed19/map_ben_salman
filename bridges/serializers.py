@@ -50,14 +50,15 @@ class RoadDefectImageSerializer(serializers.ModelSerializer):
 class RoadDefectSerializer(serializers.ModelSerializer):
     images = RoadDefectImageSerializer(many=True, read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
-    treatment_type_display = serializers.CharField(source="get_treatment_type_display", read_only=True)
+    direction_display = serializers.CharField(source="get_direction_display", read_only=True)
     color = serializers.CharField(read_only=True)
 
     class Meta:
         model = RoadDefect
         fields = [
             "id", "road", "title", "status", "status_display",
-            "observation", "description", "treatment_type", "treatment_type_display",
+            "direction", "direction_display",
+            "observation", "description",
             "lat", "lng", "color", "images"
         ]
 
