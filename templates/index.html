@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="/static/css/styles.css?v=2" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=3" />
 </head>
 <body>
 <div id="app" v-cloak>
@@ -38,32 +38,56 @@
       </select>
     </div>
     <template v-if="filterType === 'roads'">
-      <div class="filter-field">
-        <label>الاتجاه</label>
-        <select v-model="fDirection"><option value="">الكل</option><option value="mecca">مكة</option><option value="jeddah">جدة</option></select>
+      <div class="chip-group">
+        <span class="chip-label">الاتجاه</span>
+        <div class="chips">
+          <button class="chip" :class="{active: fDirection===''}" @click="fDirection=''">الكل</button>
+          <button class="chip" :class="{active: fDirection==='mecca'}" style="--chip:#a78bfa" @click="fDirection = fDirection==='mecca' ? '' : 'mecca'"><i class="dot"></i>مكة</button>
+          <button class="chip" :class="{active: fDirection==='jeddah'}" style="--chip:#38bdf8" @click="fDirection = fDirection==='jeddah' ? '' : 'jeddah'"><i class="dot"></i>جدة</button>
+        </div>
       </div>
-      <div class="filter-field">
-        <label>حالة المعالجة</label>
-        <select v-model="fTreatment"><option value="">الكل</option><option value="treated">معالج</option><option value="untreated">غير معالج</option></select>
+      <div class="chip-group">
+        <span class="chip-label">حالة المعالجة</span>
+        <div class="chips">
+          <button class="chip" :class="{active: fTreatment===''}" @click="fTreatment=''">الكل</button>
+          <button class="chip" :class="{active: fTreatment==='treated'}" style="--chip:#16a34a" @click="fTreatment = fTreatment==='treated' ? '' : 'treated'"><i class="dot"></i>معالج</button>
+          <button class="chip" :class="{active: fTreatment==='untreated'}" style="--chip:#dc2626" @click="fTreatment = fTreatment==='untreated' ? '' : 'untreated'"><i class="dot"></i>غير معالج</button>
+        </div>
       </div>
-      <div class="filter-field">
-        <label>الحالة</label>
-        <select v-model="fStatus"><option value="">الكل</option><option value="critical">حرج</option><option value="medium">متوسط</option><option value="low">منخفض</option></select>
+      <div class="chip-group">
+        <span class="chip-label">الحالة</span>
+        <div class="chips">
+          <button class="chip" :class="{active: fStatus===''}" @click="fStatus=''">الكل</button>
+          <button class="chip" :class="{active: fStatus==='critical'}" style="--chip:#dc2626" @click="fStatus = fStatus==='critical' ? '' : 'critical'"><i class="dot"></i>حرج</button>
+          <button class="chip" :class="{active: fStatus==='medium'}" style="--chip:#ea580c" @click="fStatus = fStatus==='medium' ? '' : 'medium'"><i class="dot"></i>متوسط</button>
+          <button class="chip" :class="{active: fStatus==='low'}" style="--chip:#22c55e" @click="fStatus = fStatus==='low' ? '' : 'low'"><i class="dot"></i>منخفض</button>
+        </div>
       </div>
     </template>
     <template v-else-if="filterType === 'bridges'">
-      <div class="filter-field">
-        <label>حالة المعالجة</label>
-        <select v-model="fbTreatment"><option value="">الكل</option><option value="open">مفتوح</option><option value="in_progress">جاري المعالجة</option><option value="resolved">منتهى</option></select>
+      <div class="chip-group">
+        <span class="chip-label">حالة المعالجة</span>
+        <div class="chips">
+          <button class="chip" :class="{active: fbTreatment===''}" @click="fbTreatment=''">الكل</button>
+          <button class="chip" :class="{active: fbTreatment==='open'}" style="--chip:#ea580c" @click="fbTreatment = fbTreatment==='open' ? '' : 'open'"><i class="dot"></i>مفتوح</button>
+          <button class="chip" :class="{active: fbTreatment==='in_progress'}" style="--chip:#38bdf8" @click="fbTreatment = fbTreatment==='in_progress' ? '' : 'in_progress'"><i class="dot"></i>جاري المعالجة</button>
+          <button class="chip" :class="{active: fbTreatment==='resolved'}" style="--chip:#22c55e" @click="fbTreatment = fbTreatment==='resolved' ? '' : 'resolved'"><i class="dot"></i>منتهى</button>
+        </div>
       </div>
-      <div class="filter-field">
-        <label>الحالة</label>
-        <select v-model="fbStatus"><option value="">الكل</option><option value="critical">حرج</option><option value="operational">ضعيف</option><option value="maintenance">مقبول</option><option value="good">جيد</option></select>
+      <div class="chip-group">
+        <span class="chip-label">الحالة</span>
+        <div class="chips">
+          <button class="chip" :class="{active: fbStatus===''}" @click="fbStatus=''">الكل</button>
+          <button class="chip" :class="{active: fbStatus==='critical'}" style="--chip:#dc2626" @click="fbStatus = fbStatus==='critical' ? '' : 'critical'"><i class="dot"></i>حرج</button>
+          <button class="chip" :class="{active: fbStatus==='operational'}" style="--chip:#ea580c" @click="fbStatus = fbStatus==='operational' ? '' : 'operational'"><i class="dot"></i>ضعيف</button>
+          <button class="chip" :class="{active: fbStatus==='maintenance'}" style="--chip:#d97706" @click="fbStatus = fbStatus==='maintenance' ? '' : 'maintenance'"><i class="dot"></i>مقبول</button>
+          <button class="chip" :class="{active: fbStatus==='good'}" style="--chip:#16a34a" @click="fbStatus = fbStatus==='good' ? '' : 'good'"><i class="dot"></i>جيد</button>
+        </div>
       </div>
     </template>
     <div class="filter-actions">
-      <button class="count-chip" @click="zoomToVisible" title="تقريب على المعروض">
-        <span>{{ filterType === 'bridges' ? 'الجسور' : filterType === 'roads' ? 'الحالات' : 'المعروض' }}</span>
+      <button class="count-chip" @click="zoomToVisible" title="تقريب على العناصر المعروضة">
+        <span>{{ filterType === 'bridges' ? 'الجسور' : filterType === 'roads' ? 'الحالات' : 'الإجمالي' }}</span>
         <b>{{ visibleCount }}</b>
         <small>🔍</small>
       </button>
