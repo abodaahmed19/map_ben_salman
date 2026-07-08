@@ -9,6 +9,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("bridges.urls")),
     path("", TemplateView.as_view(template_name="index.html"), name="viewer"),
+    path("projects/", TemplateView.as_view(template_name="projects.html"), name="projects"),
     path("panel/login/", panel_login, name="panel_login"),
     path("panel/logout/", panel_logout, name="panel_logout"),
     path("panel/", panel_view, name="panel"),

@@ -13,7 +13,7 @@ const ROAD_STATUS_COLORS = {
 
 const BRIDGE_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h20"/><path d="M3 18v-3a9 9 0 0 1 18 0v3"/><path d="M12 18v-6"/><path d="M7.5 18v-3.4"/><path d="M16.5 18v-3.4"/></svg>`;
 const ROAD_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3 7 21"/><path d="M15 3l2 18"/><path d="M12 4.5v3"/><path d="M12 10.5v3"/><path d="M12 16.5v3"/></svg>`;
-
+const LIGHTING_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H7"/><path d="M15 9H9"/></svg>`;
 function bridgeIcon(color, selected) {
   return L.divIcon({ className: "", html: `<div class="bridge-marker ${selected ? "selected" : ""}" style="--bc:${color}">${BRIDGE_SVG}</div>`, iconSize: [40, 40], iconAnchor: [20, 40] });
 }
@@ -22,6 +22,9 @@ function segmentIcon(color, selected) {
 }
 function roadCaseIcon(color, selected) {
   return L.divIcon({ className: "", html: `<div class="road-marker ${selected ? "selected" : ""}" style="--bc:${color}">${ROAD_SVG}</div>`, iconSize: [38, 38], iconAnchor: [19, 38] });
+}
+function lightingIcon(selected) {
+  return L.divIcon({ className: "", html: `<div class="lighting-marker ${selected ? "selected" : ""}" style="--bc:rgb(156, 163, 175)">${LIGHTING_SVG}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
 }
 
 async function api(method, url, body, isForm) {
@@ -41,6 +44,9 @@ createApp({
       placingBridge: false, movingBridge: false,
       roads: [], selRoad: null, roadDraft: null,
       movingRoadCase: false,
+      lightings: [], selLighting: null, placingLighting: false, movingLighting: false,
+      zones: [], selZone: null, drawingZone: false, tempPolyline: null,
+      contracts: [], selContract: null,
       map: null, renderLayers: [],
       toastMsg: "", toastT: null,
     };
@@ -59,15 +65,23 @@ createApp({
   },
   async mounted() {
     this.initMap();
-    await this.load();
+    setTimeout(async () => {
+      this.map.invalidateSize();
+      await this.load();
+    }, 150);
   },
   watch: {
     placingBridge() { this.updateCursor(); },
     movingBridge() { this.updateCursor(); },
     movingRoadCase() { this.updateCursor(); },
+    placingLighting() { this.updateCursor(); },
+    movingLighting() { this.updateCursor(); },
+    drawingZone() { this.updateCursor(); },
     activeTab() {
-      if (this.activeTab === "bridges") { this.selRoad = null; this.roadDraft = null; this.movingRoadCase = false; }
-      else { this.selBridge = null; this.draft = null; this.placingBridge = this.movingBridge = false; }
+      if (this.activeTab === "bridges") { this.selRoad = null; this.roadDraft = null; this.movingRoadCase = false; this.selLighting = null; this.placingLighting = this.movingLighting = false; }
+      else if (this.activeTab === "roads") { this.selBridge = null; this.draft = null; this.placingBridge = this.movingBridge = false; this.selLighting = null; this.placingLighting = this.movingLighting = false; this.selZone = null; this.drawingZone = false; }
+      else if (this.activeTab === "lightings") { this.selBridge = null; this.draft = null; this.placingBridge = this.movingBridge = false; this.selRoad = null; this.roadDraft = null; this.movingRoadCase = false; this.selZone = null; this.drawingZone = false; }
+      else if (this.activeTab === "projects") { this.selBridge = null; this.draft = null; this.placingBridge = this.movingBridge = false; this.selRoad = null; this.roadDraft = null; this.movingRoadCase = false; this.selLighting = null; this.placingLighting = this.movingLighting = false; }
       this.render();
     },
   },
@@ -78,23 +92,35 @@ createApp({
     toast(m) { this.toastMsg = m; clearTimeout(this.toastT); this.toastT = setTimeout(() => this.toastMsg = "", 2600); },
     updateCursor() {
       const el = this.map && this.map.getContainer();
-      if (el) el.style.cursor = (this.placingBridge || this.movingBridge || this.movingRoadCase) ? "crosshair" : "";
+      if (el) el.style.cursor = (this.placingBridge || this.movingBridge || this.movingRoadCase || this.placingLighting || this.movingLighting || this.drawingZone) ? "crosshair" : "";
     },
 
     initMap() {
-      this.map = L.map("admin-map", { maxZoom: 19 }).setView(CENTER, ZOOM);
+      this.map = L.map("admin-map", { maxZoom: 19, zoomAnimation: false, markerZoomAnimation: false }).setView(CENTER, ZOOM);
       const satellite = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, maxNativeZoom: 17, attribution: "Holy Makkah" });
       const streets = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", { maxZoom: 19, maxNativeZoom: 19, attribution: "© Holy Makkah" });
       satellite.addTo(this.map);
       L.control.layers({ "قمر صناعي": satellite, "خريطة شوارع": streets }, {}).addTo(this.map);
       this.map.on("click", e => this.onMapClick(e));
-      setTimeout(() => this.map.invalidateSize(), 200);
-      window.addEventListener("resize", () => this.map.invalidateSize());
+      window.addEventListener("resize", () => {
+        if (this.map) {
+          try { this.map.invalidateSize(); } catch(e) {}
+        }
+      });
     },
 
     async load(keepSelId) {
       this.bridges = await api("GET", "/api/bridges/");
       this.roads = await api("GET", "/api/roads/");
+      this.lightings = await api("GET", "/api/lightings/");
+      this.zones = await api("GET", "/api/zones/");
+      this.contracts = await api("GET", "/api/contracts/");
+
+      this.selZone = keepSelId && this.activeTab === "projects" ? this.zones.find(z => z.id === keepSelId) || null
+        : (this.selZone && this.zones.find(z => z.id === this.selZone.id)) || null;
+
+      this.selContract = keepSelId && this.activeTab === "projects" ? this.contracts.find(c => c.id === keepSelId) || null
+        : (this.selContract && this.contracts.find(c => c.id === this.selContract.id)) || null;
 
       this.selBridge = keepSelId && this.activeTab === "bridges" ? this.bridges.find(b => b.id === keepSelId) || null
         : (this.selBridge && this.bridges.find(b => b.id === this.selBridge.id)) || null;
@@ -109,6 +135,9 @@ createApp({
         const d = this.selRoad.defects.find(x => x.id === this.roadDraft.id);
         if (d) this.roadDraft = this.toRoadDraft(d);
       }
+
+      this.selLighting = keepSelId && this.activeTab === "lightings" ? this.lightings.find(l => l.id === keepSelId) || null
+        : (this.selLighting && this.lightings.find(l => l.id === this.selLighting.id)) || null;
 
       this.render();
     },
@@ -125,7 +154,7 @@ createApp({
           m.on("click", () => { if (!this.placingBridge && !this.movingBridge) this.selectBridge(b.id); });
           this.renderLayers.push(m);
         });
-      } else {
+      } else if (this.activeTab === "roads") {
         // المقطع تصنيف بلا موقع — نعرض ماركرات حالات المقطع المحدد فقط
         if (this.selRoad) {
           (this.selRoad.defects || []).forEach(d => {
@@ -135,6 +164,26 @@ createApp({
             m.on("click", () => { if (!this.movingRoadCase) this.editRoadDefect(d); });
             this.renderLayers.push(m);
           });
+        }
+      } else if (this.activeTab === "lightings") {
+        this.lightings.forEach(l => {
+          if (l.lat == null || l.lng == null) return;
+          const isSel = this.selLighting && this.selLighting.id === l.id;
+          const m = L.marker([l.lat, l.lng], { icon: lightingIcon(isSel) }).addTo(this.map);
+          m.on("click", () => { if (!this.placingLighting && !this.movingLighting) this.selectLighting(l.id); });
+          this.renderLayers.push(m);
+        });
+      } else if (this.activeTab === "projects") {
+        this.zones.forEach(z => {
+          if (z.geom && z.geom.length > 0) {
+            const isSel = this.selZone && this.selZone.id === z.id;
+            const p = L.polyline(z.geom, { color: isSel ? '#fbbf24' : '#3b82f6', weight: 6, opacity: 0.8 }).addTo(this.map);
+            p.on("click", () => { if (!this.drawingZone) this.selectZone(z.id); });
+            this.renderLayers.push(p);
+          }
+        });
+        if (this.tempPolyline) {
+          this.renderLayers.push(this.tempPolyline.addTo(this.map));
         }
       }
     },
@@ -147,6 +196,18 @@ createApp({
         this.movingRoadCase = false; this.roadDraft.lat = ll[0]; this.roadDraft.lng = ll[1];
         if (this.roadDraft.id) this.saveRoadDefect(); else this.render();
         this.toast("تم تحديد موقع الحالة ✓");
+      }
+      else if (this.placingLighting) { this.placingLighting = false; this.createLighting(ll); }
+      else if (this.movingLighting && this.selLighting) { this.movingLighting = false; this.selLighting.lat = ll[0]; this.selLighting.lng = ll[1]; this.saveLighting(); this.toast("تم تحديث موقع الإنارة ✓"); }
+      else if (this.drawingZone && this.selZone) {
+        if (!this.selZone.geom) this.selZone.geom = [];
+        this.selZone.geom.push(ll);
+        if (this.tempPolyline) {
+          this.tempPolyline.setLatLngs(this.selZone.geom);
+        } else {
+          this.tempPolyline = L.polyline(this.selZone.geom, { color: '#fbbf24', weight: 6, dashArray: '5, 5' }).addTo(this.map);
+          this.renderLayers.push(this.tempPolyline);
+        }
       }
     },
 
@@ -310,6 +371,114 @@ createApp({
       await this.load(this.selRoad.id);
       const fresh = this.selRoad.defects.find(x => x.id === this.roadDraft.id);
       if (fresh) this.roadDraft = this.toRoadDraft(fresh);
+    },
+
+    /* ----- الإنارة ----- */
+    startPlaceLighting() { this.placingLighting = true; this.movingLighting = false; this.toast("انقر على الخريطة لتحديد موقع نقطة الإنارة"); },
+    startMoveLighting() { if (!this.selLighting) return; this.movingLighting = true; this.placingLighting = false; this.toast("انقر على الخريطة لتحريك النقطة"); },
+    async createLighting(ll) {
+      try {
+        const created = await api("POST", "/api/lightings/", { number: "نقطة جديدة", type: "pole", lat: ll[0], lng: ll[1] });
+        await this.load(created.id); this.toast("تم إضافة النقطة ✓");
+      } catch (e) { this.toast("خطأ في الإضافة"); console.error(e); }
+    },
+    selectLighting(id) {
+      this.selLighting = this.lightings.find(l => l.id === id) || null;
+      this.render();
+      if (this.selLighting) this.map.panTo([this.selLighting.lat, this.selLighting.lng]);
+    },
+    async saveLighting() {
+      if (!this.selLighting) return;
+      const l = this.selLighting;
+      try {
+        await api("PATCH", `/api/lightings/${l.id}/`, { number: l.number, type: l.type, lat: Number(l.lat), lng: Number(l.lng) });
+        await this.load(l.id); this.toast("تم الحفظ ✓");
+      } catch (e) { this.toast("خطأ في الحفظ"); }
+    },
+    async deleteLighting(l) {
+      if (!confirm("حذف هذه النقطة؟")) return;
+      await api("DELETE", `/api/lightings/${l.id}/`);
+      if (this.selLighting && this.selLighting.id === l.id) this.selLighting = null;
+      await this.load(); this.toast("تم حذف النقطة");
+    },
+
+    /* ----- المشاريع (النطاقات والعقود) ----- */
+    async createZone() {
+      try {
+        const created = await api("POST", "/api/zones/", { name: "نطاق جديد", geom: [] });
+        await this.load(created.id); this.toast("تم إضافة النطاق ✓");
+      } catch (e) { this.toast("خطأ في الإضافة"); }
+    },
+    selectZone(id) {
+      this.selZone = this.zones.find(z => z.id === id) || null;
+      this.selContract = null; this.drawingZone = false; this.tempPolyline = null; this.render();
+      if (this.selZone && this.selZone.geom && this.selZone.geom.length > 0) {
+        try {
+          const b = L.polyline(this.selZone.geom).getBounds();
+          if (b.isValid()) this.map.fitBounds(b, { padding: [50, 50], animate: false });
+        } catch(e) {}
+      }
+    },
+    startDrawZone() {
+      if (!this.selZone) return;
+      this.selZone.geom = []; // clear old geom
+      this.tempPolyline = null;
+      this.drawingZone = true;
+      this.toast("انقر على الخريطة لرسم المسار، وعند الانتهاء اضغط إنهاء الرسم");
+      this.render();
+    },
+    async finishDrawZone() {
+      this.drawingZone = false;
+      this.tempPolyline = null;
+      if (this.selZone && this.selZone.geom && this.selZone.geom.length > 0) {
+        await this.saveZone();
+      } else {
+        this.render();
+      }
+    },
+    async saveZone() {
+      if (!this.selZone) return;
+      try {
+        await api("PATCH", `/api/zones/${this.selZone.id}/`, { name: this.selZone.name, color: this.selZone.color || "#3b82f6", geom: this.selZone.geom });
+        await this.load(this.selZone.id); this.toast("تم حفظ النطاق ✓");
+      } catch (e) { this.toast("خطأ في الحفظ"); }
+    },
+    async deleteZone(z) {
+      if (!confirm("حذف هذا النطاق وكل ما يرتبط به؟")) return;
+      await api("DELETE", `/api/zones/${z.id}/`);
+      if (this.selZone && this.selZone.id === z.id) this.selZone = null;
+      await this.load(); this.toast("تم حذف النطاق");
+    },
+
+    async createContract() {
+      try {
+        const created = await api("POST", "/api/contracts/", { project_name: "عقد جديد", value: 0, department: "", status: "جاري", zones: [] });
+        await this.load(); this.toast("تم إضافة العقد ✓");
+        this.selContract = this.contracts.find(c => c.id === created.id);
+      } catch (e) { this.toast("خطأ في الإضافة"); }
+    },
+    selectContract(id) {
+      this.selContract = this.contracts.find(c => c.id === id) || null;
+      this.selZone = null; this.drawingZone = false; this.render();
+    },
+    async saveContract() {
+      if (!this.selContract) return;
+      try {
+        await api("PATCH", `/api/contracts/${this.selContract.id}/`, { 
+          project_name: this.selContract.project_name, 
+          value: Number(this.selContract.value), 
+          department: this.selContract.department,
+          status: this.selContract.status,
+          zones: this.selContract.zones // Array of IDs
+        });
+        await this.load(); this.toast("تم حفظ العقد ✓");
+      } catch (e) { this.toast("خطأ في الحفظ"); }
+    },
+    async deleteContract(c) {
+      if (!confirm("حذف هذا العقد؟")) return;
+      await api("DELETE", `/api/contracts/${c.id}/`);
+      if (this.selContract && this.selContract.id === c.id) this.selContract = null;
+      await this.load(); this.toast("تم حذف العقد");
     },
   },
 }).mount("#app");

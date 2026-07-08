@@ -5,10 +5,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>محور طريق الأمير محمد بن سلمان</title>
+  <link rel="icon" href="/static/img/favicon.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/static/css/leaflet.css" />
   <link rel="stylesheet" href="/static/css/styles.css?v=2" />
+  <script>
+    window.addEventListener("error", function (e) {
+      alert("Error: " + e.message + " at " + e.filename + ":" + e.lineno);
+    });
+    window.addEventListener("unhandledrejection", function (e) {
+      alert("Unhandled Promise Rejection: " + e.reason);
+    });
+  </script>
 </head>
 <body>
 <div id="app" v-cloak>
@@ -29,8 +38,10 @@
   <div class="admin-shell">
     <div class="admin-side">
       <div class="panel-tabs" style="display:flex; margin-bottom:12px; gap:8px;">
-        <button class="btn" :class="activeTab==='bridges' ? 'primary' : ''" style="flex:1;justify-content:center" @click="setTab('bridges')">🌉 الجسور</button>
-        <button class="btn" :class="activeTab==='roads' ? 'primary' : ''" style="flex:1;justify-content:center" @click="setTab('roads')">🛣️ الطرق</button>
+        <button class="btn" :class="activeTab==='bridges' ? 'primary' : ''" style="flex:1;justify-content:center;padding:4px" @click="setTab('bridges')">🌉 الجسور</button>
+        <button class="btn" :class="activeTab==='roads' ? 'primary' : ''" style="flex:1;justify-content:center;padding:4px" @click="setTab('roads')">🛣️ الطرق</button>
+        <button class="btn" :class="activeTab==='lightings' ? 'primary' : ''" style="flex:1;justify-content:center;padding:4px" @click="setTab('lightings')">💡 الإنارة</button>
+        <button class="btn" :class="activeTab==='projects' ? 'primary' : ''" style="flex:1;justify-content:center;padding:4px" @click="setTab('projects')">🏗️ المشاريع</button>
       </div>
 
       <div class="hint">
@@ -135,6 +146,35 @@
                 <button class="btn danger" style="justify-content:center" @click="cancelDefect">✕ إلغاء</button>
               </div>
             </div>
+          </div>
+
+          <!-- كرت إضافة حالة جديدة -->
+          <div class="card" v-if="draft && !draft.id" style="margin-top: 8px;">
+            <h3>🔧 حالة جديدة</h3>
+            <div class="field"><label>اسم الحالة</label>
+              <input v-model="draft.title" list="bridge-defect-titles" />
+            </div>
+            <div class="field"><label>الحالة</label>
+              <select v-model="draft.status">
+                <option value="open">مفتوح</option>
+                <option value="in_progress">جاري المعالجة</option>
+                <option value="resolved">منتهى</option>
+              </select>
+            </div>
+            <div class="field"><label>الوصف</label><textarea v-model="draft.description"></textarea></div>
+            <div class="field-row">
+              <div class="field"><label>الطول (م)</label><input type="number" step="any" v-model.number="draft.length_m" /></div>
+              <div class="field"><label>العرض (م)</label><input type="number" step="any" v-model.number="draft.width_m" /></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>المساحة (م²)</label><input type="number" step="any" v-model.number="draft.area_m2" /></div>
+              <div class="field"><label>العدد</label><input type="number" v-model.number="draft.count" /></div>
+            </div>
+            <div class="field-row" style="margin-top:6px">
+              <button class="btn primary" style="justify-content:center" @click="saveDefect">💾 حفظ الحالة</button>
+              <button class="btn danger" style="justify-content:center" @click="cancelDefect">✕ إلغاء</button>
+            </div>
+            <p class="mini" style="margin-top:8px;color:var(--muted);font-size:12px">احفظ الحالة أولًا ثم افتحها لرفع الصور.</p>
           </div>
 
           <button class="btn" style="width:100%;justify-content:center;margin-top:6px" @click="newDefect">➕ إضافة حالة</button>
@@ -274,14 +314,119 @@
           </div>
         </div>
       </div>
+
+      <!-- ==================== قسم الإنارة ==================== -->
+      <div v-show="activeTab === 'lightings'">
+        <div class="card">
+          <h3>💡 الإنارة (أعمدة وأبراج)</h3>
+          <div v-if="!lightings.length" class="empty">لا توجد نقاط إنارة بعد.</div>
+          
+          <div v-for="l in lightings" :key="l.id">
+            <div class="list-item" :class="{active: selLighting && selLighting.id === l.id}" @click="selectLighting(l.id)">
+              <div class="swatch" :style="{background: l.color}"></div>
+              <div class="info"><b>{{ l.number }}</b><span>{{ l.type_display }}</span></div>
+              <button class="del" @click.stop="deleteLighting(l)">🗑️</button>
+            </div>
+
+            <div class="card" v-if="selLighting && selLighting.id === l.id" style="margin-top: 8px; margin-bottom: 8px;">
+              <h3>✏️ بيانات النقطة</h3>
+              <div class="field"><label>رقم العمود/البرج</label><input v-model="selLighting.number" @change="saveLighting" /></div>
+              <div class="field"><label>النوع</label>
+                <select v-model="selLighting.type" @change="saveLighting">
+                  <option value="pole">عمود</option>
+                  <option value="tower">برج</option>
+                </select>
+              </div>
+              <div class="field-row">
+                <div class="field"><label>خط العرض (lat)</label><input type="number" step="any" v-model.number="selLighting.lat" @change="saveLighting" /></div>
+                <div class="field"><label>خط الطول (lng)</label><input type="number" step="any" v-model.number="selLighting.lng" @change="saveLighting" /></div>
+              </div>
+              <div class="field-row">
+                <button class="btn" style="justify-content:center" @click="startMoveLighting()">📍 تحديد على الخريطة</button>
+                <button class="btn danger" style="justify-content:center" @click="deleteLighting(selLighting)">🗑️ حذف النقطة</button>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="startPlaceLighting()">➕ إضافة نقطة إنارة</button>
+        </div>
+      </div>
+
+      <!-- ==================== قسم المشاريع (نطاقات وعقود) ==================== -->
+      <div v-show="activeTab === 'projects'">
+        <div class="card">
+          <h3>📍 النطاقات (الخطوط)</h3>
+          <div v-if="!zones.length" class="empty">لا توجد نطاقات بعد.</div>
+          
+          <div v-for="z in zones" :key="z.id">
+            <div class="list-item" :class="{active: selZone && selZone.id === z.id}" @click="selectZone(z.id)">
+              <div class="swatch" :style="{background: z.color || '#3b82f6'}"></div>
+              <div class="info"><b>{{ z.name || 'نطاق بدون اسم' }}</b><span>{{ z.geom ? z.geom.length + ' نقاط مسار' : 'لا يوجد مسار' }}</span></div>
+              <button class="del" @click.stop="deleteZone(z)">🗑️</button>
+            </div>
+
+            <div class="card" v-if="selZone && selZone.id === z.id" style="margin-top: 8px; margin-bottom: 8px;">
+              <h3>✏️ بيانات النطاق</h3>
+              <div class="field"><label>اسم النطاق</label><input v-model="selZone.name" @change="saveZone" /></div>
+              <div class="field">
+                <label>لون الخط</label>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <input type="color" v-model="selZone.color" @change="saveZone" style="width:48px; height:36px; border:none; border-radius:6px; cursor:pointer; padding:2px; background:transparent;" />
+                  <span style="font-size:13px; color:var(--muted);">{{ selZone.color }}</span>
+                </div>
+              </div>
+              <div class="field-row">
+                <button class="btn" style="justify-content:center" @click="startDrawZone()">📍 رسم المسار على الخريطة</button>
+                <button class="btn danger" style="justify-content:center" @click="deleteZone(selZone)">🗑️ حذف</button>
+              </div>
+            </div>
+          </div>
+          <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="createZone()">➕ إضافة نطاق</button>
+        </div>
+
+        <div class="card">
+          <h3>🏗️ عقود المشاريع</h3>
+          <div v-if="!contracts.length" class="empty">لا توجد عقود بعد.</div>
+
+          <div v-for="c in contracts" :key="c.id">
+            <div class="list-item" :class="{active: selContract && selContract.id === c.id}" @click="selectContract(c.id)">
+              <div class="swatch" style="background: #eab308"></div>
+              <div class="info"><b>{{ c.project_name || 'عقد بدون اسم' }}</b><span style="font-size:12px;">{{ c.value ? c.value.toLocaleString() + ' ريال' : '0 ريال' }} | {{ c.department || 'بدون إدارة' }} | {{ c.status || 'بدون حالة' }}</span></div>
+              <button class="del" @click.stop="deleteContract(c)">🗑️</button>
+            </div>
+
+            <div class="card" v-if="selContract && selContract.id === c.id" style="margin-top: 8px; margin-bottom: 8px;">
+              <h3>✏️ بيانات العقد</h3>
+              <div class="field"><label>اسم العقد</label><input v-model="selContract.project_name" @change="saveContract" /></div>
+              <div class="field"><label>قيمة صرف العقد (ريال)</label><input type="number" step="any" v-model.number="selContract.value" @change="saveContract" /></div>
+              <div class="field"><label>اسم الإدارة</label><input v-model="selContract.department" @change="saveContract" /></div>
+              <div class="field"><label>حالة العقد</label><input v-model="selContract.status" @change="saveContract" /></div>
+              <div class="field">
+                <label>ارتباط النطاقات (اختر واحد أو أكثر)</label>
+                <select multiple v-model="selContract.zones" @change="saveContract" style="height: 100px;">
+                  <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
+                </select>
+                <p class="mini" style="margin-top:4px;color:var(--muted);font-size:11px">اضغط Ctrl (أو Cmd) لاختيار أكثر من نطاق.</p>
+              </div>
+              <div class="field-row">
+                <button class="btn danger" style="width:100%;justify-content:center" @click="deleteContract(selContract)">🗑️ حذف العقد</button>
+              </div>
+            </div>
+          </div>
+          <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="createContract()">➕ إضافة عقد</button>
+        </div>
+      </div>
     </div>
 
     <div id="admin-map">
-      <div class="draw-toolbar" v-if="placingBridge || movingBridge || movingRoadCase">
+      <div class="draw-toolbar" v-if="placingBridge || movingBridge || movingRoadCase || drawingZone">
         <span class="draw-hint" v-if="placingBridge">انقر لتحديد موقع الجسر</span>
         <span class="draw-hint" v-else-if="movingBridge">انقر لتحريك الجسر</span>
         <span class="draw-hint" v-else-if="movingRoadCase">انقر لتحديد موقع الحالة</span>
-        <button class="btn danger" @click="placingBridge=false; movingBridge=false; movingRoadCase=false;">✕ إلغاء</button>
+        <span class="draw-hint" v-else-if="placingLighting">انقر لتحديد موقع نقطة الإنارة</span>
+        <span class="draw-hint" v-else-if="movingLighting">انقر لتحريك نقطة الإنارة</span>
+        <span class="draw-hint" v-else-if="drawingZone">انقر لتسجيل النقاط، ثم انقر ✕ للإنهاء وحفظ المسار</span>
+        <button class="btn danger" @click="placingBridge=false; movingBridge=false; movingRoadCase=false; placingLighting=false; movingLighting=false; finishDrawZone();">✕ إلغاء / إنهاء الرسم</button>
       </div>
     </div>
   </div>
@@ -289,8 +434,8 @@
   <div class="toast" :class="{show: toastMsg}">{{ toastMsg }}</div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="/static/js/leaflet.js"></script>
+<script src="/static/js/vue.global.prod.js"></script>
 <script src="/static/js/panel.js?v=9"></script>
 </body>
 </html>

@@ -5,11 +5,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>محور طريق الأمير محمد بن سلمان — حالة الطرق والجسور</title>
+  <link rel="icon" href="/static/img/favicon.png" type="image/png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="/static/css/styles.css?v=4" />
+  <link rel="stylesheet" href="/static/css/leaflet.css" />
+  <link rel="stylesheet" href="/static/css/MarkerCluster.css" />
+  <link rel="stylesheet" href="/static/css/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=2" />
+  <script>
+    window.addEventListener("error", function (e) {
+      alert("Error: " + e.message + " at " + e.filename + ":" + e.lineno);
+    });
+    window.addEventListener("unhandledrejection", function (e) {
+      alert("Unhandled Promise Rejection: " + e.reason);
+    });
+  </script>
 </head>
 <body>
 <div id="app" v-cloak>
@@ -23,18 +33,32 @@
       <h1>محور طريق الأمير محمد بن سلمان</h1>
     </div>
     <div class="spacer"></div>
+    <div style="display: flex; gap: 8px;">
+      <a class="btn primary" href="/">⚠️ الحالات</a>
+      <a class="btn" href="/projects/" style="background: rgba(255,255,255,0.1); color: #fff;">🏗️ المشاريع</a>
+    </div>
   </header>
 
   <div id="map"></div>
   <div class="loading" v-if="loading">جارٍ تحميل البيانات…</div>
 
-  <div class="filter-panel">
+  <button class="filter-toggle-btn" v-show="!filterOpen" @click="filterOpen = true">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+    <span>الفلاتر</span>
+  </button>
+
+  <div class="filter-panel" v-show="filterOpen">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+       <span style="font-size: 14px; font-weight: 800; color: #fff;">الفلاتر</span>
+       <button class="close-filter-btn" @click="filterOpen = false">✕</button>
+    </div>
     <div class="filter-field">
       <label>النوع</label>
       <select v-model="filterType">
-        <option value="all">🛣️🌉 الطرق والجسور</option>
+        <option value="all">🛣️🌉💡 الكل (طرق, جسور, إنارة)</option>
         <option value="roads">🛣️ الطرق</option>
         <option value="bridges">🌉 الجسور</option>
+        <option value="lightings">💡 الإنارة</option>
       </select>
     </div>
     <template v-if="filterType === 'roads'">
@@ -90,9 +114,19 @@
         </div>
       </div>
     </template>
+    <template v-else-if="filterType === 'lightings'">
+      <div class="chip-group">
+        <span class="chip-label">النوع</span>
+        <div class="chips">
+          <button class="chip" :class="{active: flType===''}" @click="flType=''">الكل</button>
+          <button class="chip" :class="{active: flType==='pole'}" style="--chip:#9ca3af" @click="flType = flType==='pole' ? '' : 'pole'"><i class="dot"></i>أعمدة</button>
+          <button class="chip" :class="{active: flType==='tower'}" style="--chip:#4b5563" @click="flType = flType==='tower' ? '' : 'tower'"><i class="dot"></i>أبراج</button>
+        </div>
+      </div>
+    </template>
     <div class="filter-actions">
       <button class="count-chip" @click="zoomToVisible" title="تقريب على العناصر المعروضة">
-        <span>{{ filterType === 'bridges' ? 'حالات الجسور' : filterType === 'roads' ? 'حالات الطرق' : 'الإجمالي' }}</span>
+        <span>{{ filterType === 'bridges' ? 'حالات الجسور' : filterType === 'roads' ? 'حالات الطرق' : filterType === 'lightings' ? 'الإنارة' : 'الإجمالي' }}</span>
         <b>{{ visibleCount }}</b>
         <small>🔍</small>
       </button>
@@ -108,9 +142,10 @@
       <h2>{{ selected.title || (selectedType === 'bridge' ? selected.name : 'حالة') }}</h2>
       <div class="meta">
         <span v-if="selectedType === 'roadcase' && selected.direction_display" class="direction-badge">{{ selected.direction_display }}</span>
-        <span class="status-badge" :class="'status-'+selected.status">{{ selected.status_display }}</span>
+        <span v-if="selectedType !== 'lighting'" class="status-badge" :class="'status-'+selected.status">{{ selected.status_display }}</span>
         <span v-if="selectedType === 'roadcase' && selected.road_segment" class="chip">🛣️ {{ selected.road_segment }}</span>
         <span v-if="selectedType === 'bridgecase' && selected.bridge_name" class="chip">🌉 {{ selected.bridge_name }}</span>
+        <span v-if="selectedType === 'lighting'" class="chip">💡 إنارة</span>
       </div>
     </div>
     <div class="panel-body">
@@ -146,6 +181,14 @@
           <div class="metric"><span>الإحداثيات</span><b>{{ selected.lat.toFixed(4) }}, {{ selected.lng.toFixed(4) }}</b></div>
         </div>
       </template>
+
+      <!-- نقطة إنارة مفردة -->
+      <template v-else-if="selectedType === 'lighting'">
+        <div class="metrics">
+          <div class="metric"><span>النوع</span><b>{{ selected.type_display }}</b></div>
+          <div class="metric"><span>الإحداثيات</span><b>{{ selected.lat.toFixed(5) }}, {{ selected.lng.toFixed(5) }}</b></div>
+        </div>
+      </template>
     </div>
    </div>
   </div>
@@ -154,7 +197,7 @@
   <div class="dash-overlay" v-if="showDash" @click.self="closeDash">
     <div class="dash-modal">
       <div class="dash-head">
-        <h2>📊 لوحة البيانات — {{ dashMode === 'bridges' ? 'الجسور' : 'الطرق' }}</h2>
+        <h2>📊 لوحة البيانات — {{ dashMode === 'bridges' ? 'الجسور' : dashMode === 'roads' ? 'الطرق' : 'الإنارة' }}</h2>
         <button class="close" @click="closeDash">✕</button>
       </div>
       <div class="dash-body">
@@ -165,11 +208,16 @@
           <div class="kpicard"><b style="color:#dc2626">{{ visibleRoadCases.filter(d=>d.treatment_type==='untreated').length }}</b><span>غير معالج</span></div>
           <div class="kpicard"><b style="color:#dc2626">{{ visibleRoadCases.filter(d=>d.status==='critical').length }}</b><span>حرج</span></div>
         </div>
-        <div class="kpi-row" v-else>
+        <div class="kpi-row" v-else-if="dashMode === 'bridges'">
           <div class="kpicard"><b>{{ new Set(visibleBridges.map(d=>d.bridge_name)).size }}</b><span>إجمالي الجسور</span></div>
           <div class="kpicard"><b style="color:#dc2626">{{ new Set(visibleBridges.filter(d=>d.bridge_status==='critical').map(d=>d.bridge_name)).size }}</b><span>جسور حرجة</span></div>
           <div class="kpicard"><b>{{ visibleBridges.length }}</b><span>إجمالي الحالات</span></div>
           <div class="kpicard"><b style="color:#ea580c">{{ visibleBridges.filter(d=>d.status==='open').length }}</b><span>حالات مفتوحة</span></div>
+        </div>
+        <div class="kpi-row" v-else-if="dashMode === 'lightings'">
+          <div class="kpicard"><b>{{ visibleLightings.length }}</b><span>إجمالي النقاط</span></div>
+          <div class="kpicard"><b style="color:#9ca3af">{{ visibleLightings.filter(d=>d.type==='pole').length }}</b><span>أعمدة</span></div>
+          <div class="kpicard"><b style="color:#4b5563">{{ visibleLightings.filter(d=>d.type==='tower').length }}</b><span>أبراج</span></div>
         </div>
 
         <!-- رسوم -->
@@ -178,8 +226,11 @@
           <div class="chart-card"><h3>الاتجاه</h3><div class="chartbox"><canvas id="ch3"></canvas></div></div>
           <div class="chart-card"><h3>الحالات حسب المقطع</h3><div class="chartbox"><canvas id="ch4"></canvas></div></div>
         </div>
-        <div class="chart-grid" v-else>
+        <div class="chart-grid" v-else-if="dashMode === 'bridges'">
           <div class="chart-card"><h3>حالة الجسور</h3><div class="chartbox"><canvas id="ch1"></canvas></div></div>
+        </div>
+        <div class="chart-grid" v-else-if="dashMode === 'lightings'">
+          <div class="chart-card"><h3>الأنواع</h3><div class="chartbox"><canvas id="ch1"></canvas></div></div>
         </div>
 
         <!-- جدول -->
@@ -195,7 +246,7 @@
               </tr>
             </tbody>
           </table>
-          <table v-else>
+          <table v-else-if="dashMode === 'bridges'">
             <thead><tr><th>الحالة</th><th>الجسر</th><th>حالة الجسر</th></tr></thead>
             <tbody>
               <tr v-for="d in visibleBridges" :key="d.id" @click="focusFromDash(d,'bridgecase')">
@@ -204,6 +255,15 @@
                 <td><span class="badge" :style="{background: d.bridge_status==='critical' ? '#dc2626' : d.bridge_status==='operational' ? '#ea580c' : d.bridge_status==='maintenance' ? '#d97706' : '#16a34a'}">
                   {{ d.bridge_status==='critical' ? 'حرج' : d.bridge_status==='operational' ? 'ضعيف' : d.bridge_status==='maintenance' ? 'مقبول' : 'جيد' }}
                 </span></td>
+              </tr>
+            </tbody>
+          </table>
+          <table v-else-if="dashMode === 'lightings'">
+            <thead><tr><th>رقم العمود/البرج</th><th>النوع</th></tr></thead>
+            <tbody>
+              <tr v-for="d in visibleLightings" :key="d.id" @click="focusFromDash(d,'lighting')">
+                <td>{{ d.number }}</td>
+                <td><span class="badge" :style="{background: d.type==='pole' ? '#9ca3af' : '#4b5563'}">{{ d.type_display }}</span></td>
               </tr>
             </tbody>
           </table>
@@ -232,11 +292,11 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="/static/js/viewer.js?v=12"></script>
+<script src="/static/js/leaflet.js"></script>
+<script src="/static/js/leaflet.markercluster.js"></script>
+<script src="/static/js/vue.global.prod.js"></script>
+<script src="/static/js/chart.umd.js"></script>
+<script src="/static/js/viewer.js?v=13"></script>
 </body>
 </html>
 {% endverbatim %}

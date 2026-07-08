@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Bridge, Defect, DefectImage, Road, RoadDefect, RoadDefectImage
+from .models import Bridge, Defect, DefectImage, Road, RoadDefect, RoadDefectImage, Lighting, Zone, Contract
 
 
 class DefectImageSerializer(serializers.ModelSerializer):
@@ -83,4 +83,31 @@ class RoadSerializer(serializers.ModelSerializer):
 
     def get_untreated_count(self, obj):
         return obj.defects.filter(treatment_type="untreated").count()
+
+
+class LightingSerializer(serializers.ModelSerializer):
+    type_display = serializers.CharField(source="get_type_display", read_only=True)
+    color = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Lighting
+        fields = ["id", "number", "type", "type_display", "lat", "lng", "color", "created_at"]
+
+
+class ContractSerializer(serializers.ModelSerializer):
+    # To return full zone details if needed, but usually we just want IDs on write and maybe nested on read.
+    # We will use primary key related field for write, and override to_representation if needed.
+    zones = serializers.PrimaryKeyRelatedField(many=True, queryset=Zone.objects.all())
+
+    class Meta:
+        model = Contract
+        fields = ["id", "project_name", "value", "department", "status", "zones", "created_at"]
+
+
+class ZoneSerializer(serializers.ModelSerializer):
+    contracts = ContractSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Zone
+        fields = ["id", "name", "color", "geom", "contracts", "created_at"]
 

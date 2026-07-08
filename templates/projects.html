@@ -1,0 +1,83 @@
+{% verbatim %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>محور طريق الأمير محمد بن سلمان — المشاريع</title>
+  <link rel="icon" href="/static/img/favicon.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/leaflet.css" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=5" />
+  <script>
+    window.addEventListener("error", function (e) {
+      alert("Error: " + e.message + " at " + e.filename + ":" + e.lineno);
+    });
+    window.addEventListener("unhandledrejection", function (e) {
+      alert("Unhandled Promise Rejection: " + e.reason);
+    });
+  </script>
+  <style>
+    .contract-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+<div id="app" v-cloak>
+  <header class="topbar">
+    <div class="brand-lockup">
+      <img src="/static/img/logo.png" alt="أمانة العاصمة المقدسة" />
+      <div class="divider"></div>
+      <div class="dept">إدارة أصول النقل والبنية التحتية</div>
+    </div>
+    <div class="title-block">
+      <h1>محور طريق الأمير محمد بن سلمان</h1>
+    </div>
+    <div class="spacer"></div>
+    <div style="display: flex; gap: 8px;">
+      <a class="btn" href="/" style="background: rgba(255,255,255,0.1); color: #fff;">⚠️ الحالات</a>
+      <a class="btn primary" href="/projects/">🏗️ المشاريع</a>
+    </div>
+  </header>
+
+  <div id="map"></div>
+  <div class="loading" v-if="loading">جارٍ تحميل البيانات…</div>
+
+
+  <div class="modal-overlay" v-if="selectedZone" @click.self="closePanel">
+    <div class="modal">
+      <div class="panel-head">
+        <button class="close" @click="closePanel">✕</button>
+        <h2>{{ selectedZone.name }}</h2>
+        <div class="meta">
+          <span class="chip">📍 نطاق</span>
+          <span class="chip">عقود: {{ selectedZone.contracts.length }}</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div v-if="selectedZone.contracts.length === 0" class="empty" style="color:var(--muted)">لا توجد عقود مسجلة لهذا النطاق.</div>
+        <div v-for="c in selectedZone.contracts" :key="c.id" class="contract-card">
+          <h3 style="margin-top: 0; margin-bottom: 8px; color: #fff; font-size: 16px;">{{ c.project_name }}</h3>
+          <div class="metrics">
+            <div class="metric"><span>القيمة</span><b>{{ (c.value || 0).toLocaleString() }} ريال</b></div>
+            <div class="metric"><span>الإدارة</span><b>{{ c.department || '—' }}</b></div>
+            <div class="metric"><span>الحالة</span><b>{{ c.status || '—' }}</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/leaflet.js"></script>
+<script src="/static/js/vue.global.prod.js"></script>
+<script src="/static/js/projects.js?v=1"></script>
+</body>
+</html>
+{% endverbatim %}

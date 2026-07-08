@@ -1,8 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Bridge, Defect, DefectImage, Road, RoadDefect, RoadDefectImage
-from .serializers import BridgeSerializer, DefectSerializer, DefectImageSerializer, RoadSerializer, RoadDefectSerializer, RoadDefectImageSerializer
+from .models import Bridge, Defect, DefectImage, Road, RoadDefect, RoadDefectImage, Lighting, Zone, Contract
+from .serializers import BridgeSerializer, DefectSerializer, DefectImageSerializer, RoadSerializer, RoadDefectSerializer, RoadDefectImageSerializer, LightingSerializer, ZoneSerializer, ContractSerializer
 
 
 class BridgeViewSet(viewsets.ModelViewSet):
@@ -59,3 +59,18 @@ class RoadDefectViewSet(viewsets.ModelViewSet):
 class RoadDefectImageViewSet(viewsets.ModelViewSet):
     queryset = RoadDefectImage.objects.all()
     serializer_class = RoadDefectImageSerializer
+
+
+class LightingViewSet(viewsets.ModelViewSet):
+    queryset = Lighting.objects.all()
+    serializer_class = LightingSerializer
+
+
+class ZoneViewSet(viewsets.ModelViewSet):
+    queryset = Zone.objects.prefetch_related("contracts").all()
+    serializer_class = ZoneSerializer
+
+
+class ContractViewSet(viewsets.ModelViewSet):
+    queryset = Contract.objects.prefetch_related("zones").all()
+    serializer_class = ContractSerializer

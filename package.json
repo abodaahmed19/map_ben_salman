@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@vue/compiler-dom": "^3.5.39",
+    "chart.js": "^4.4.1",
+    "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
+    "playwright": "^1.61.1",
+    "vue": "^3.5.39"
+  }
+}
