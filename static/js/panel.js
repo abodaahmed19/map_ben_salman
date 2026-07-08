@@ -27,8 +27,10 @@ function lightingIcon(selected) {
   return L.divIcon({ className: "", html: `<div class="lighting-marker ${selected ? "selected" : ""}" style="--bc:rgb(156, 163, 175)">${LIGHTING_SVG}</div>`, iconSize: [30, 30], iconAnchor: [15, 30] });
 }
 
-async function api(method, url, body, isForm) {
+async function api(method, url, body = null, isForm = false) {
   const opt = { method, headers: {} };
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || "";
+  if (csrfToken) opt.headers["X-CSRFToken"] = csrfToken;
   if (body && !isForm) { opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
   if (body && isForm) opt.body = body;
   const res = await fetch(url, opt);
@@ -58,10 +60,16 @@ createApp({
       return [...new Set(types)].sort();
     },
     uniqueRoadDefectTypes() {
-      const types = [];
-      this.roads.forEach(r => (r.defects || []).forEach(d => { if (d.title) types.push(d.title); }));
-      return [...new Set(types)].sort();
-    }
+      const types = new Set();
+      this.roads.forEach(r => r.defects.forEach(d => {
+        if (d.title) types.add(d.title);
+      }));
+      return Array.from(types);
+    },
+    currentZones() { return this.zones.filter(z => z.category === 'current'); },
+    newZones() { return this.zones.filter(z => z.category === 'new2028'); },
+    currentContracts() { return this.contracts.filter(c => c.category === 'current'); },
+    newContracts() { return this.contracts.filter(c => c.category === 'new2028'); }
   },
   async mounted() {
     this.initMap();
@@ -173,8 +181,9 @@ createApp({
           m.on("click", () => { if (!this.placingLighting && !this.movingLighting) this.selectLighting(l.id); });
           this.renderLayers.push(m);
         });
-      } else if (this.activeTab === "projects") {
-        this.zones.forEach(z => {
+      } else if (this.activeTab === "projects" || this.activeTab === "projects_new") {
+        const zonesToRender = this.activeTab === "projects" ? this.currentZones : this.newZones;
+        zonesToRender.forEach(z => {
           if (z.geom && z.geom.length > 0) {
             const isSel = this.selZone && this.selZone.id === z.id;
             const p = L.polyline(z.geom, { color: isSel ? '#fbbf24' : '#3b82f6', weight: 6, opacity: 0.8 }).addTo(this.map);
@@ -403,9 +412,9 @@ createApp({
     },
 
     /* ----- المشاريع (النطاقات والعقود) ----- */
-    async createZone() {
+    async createZone(category = 'current') {
       try {
-        const created = await api("POST", "/api/zones/", { name: "نطاق جديد", geom: [] });
+        const created = await api("POST", "/api/zones/", { name: "نطاق جديد", category: category, geom: [] });
         await this.load(created.id); this.toast("تم إضافة النطاق ✓");
       } catch (e) { this.toast("خطأ في الإضافة"); }
     },
@@ -450,9 +459,9 @@ createApp({
       await this.load(); this.toast("تم حذف النطاق");
     },
 
-    async createContract() {
+    async createContract(category = 'current') {
       try {
-        const created = await api("POST", "/api/contracts/", { project_name: "عقد جديد", value: 0, department: "", status: "جاري", zones: [] });
+        const created = await api("POST", "/api/contracts/", { project_name: "عقد جديد", category: category, order: 0, value: 0, department: "", status: "جاري", zones: [] });
         await this.load(); this.toast("تم إضافة العقد ✓");
         this.selContract = this.contracts.find(c => c.id === created.id);
       } catch (e) { this.toast("خطأ في الإضافة"); }
@@ -466,6 +475,7 @@ createApp({
       try {
         await api("PATCH", `/api/contracts/${this.selContract.id}/`, { 
           project_name: this.selContract.project_name, 
+          order: Number(this.selContract.order),
           value: Number(this.selContract.value), 
           department: this.selContract.department,
           status: this.selContract.status,

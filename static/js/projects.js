@@ -69,7 +69,7 @@ createApp({
         maxZoom: 19, maxNativeZoom: 19, attribution: "© Holy Makkah"
       });
       satellite.addTo(this.map);
-      L.control.layers({ "قمر صناعي": satellite, "خريطة شوارع": streets }, {}).addTo(this.map);
+      L.control.layers({ "قمر صناعي": satellite, "خريطة شوارع": streets }, {}, { position: 'topleft' }).addTo(this.map);
 
       window.addEventListener("resize", () => {
         if (this.map) {
@@ -81,7 +81,7 @@ createApp({
       this.loading = true;
       try {
         const [zonesRes, bridgesRes] = await Promise.all([
-          api("GET", "/api/zones/"),
+          api("GET", `/api/zones/?category=${PAGE_CATEGORY}`),
           api("GET", "/api/bridges/")
         ]);
         this.zones = zonesRes;
@@ -174,6 +174,20 @@ createApp({
         try {
           const group = L.featureGroup(this.polylines);
           const b = group.getBounds();
+          if (b.isValid()) this.map.fitBounds(b, { padding: [50, 50], animate: false });
+        } catch(e) {}
+      }
+    },
+    selectZone(id) {
+      if (!id) {
+        this.selectedZone = null;
+        return;
+      }
+      const zone = this.zones.find(z => z.id === id);
+      this.selectedZone = zone || null;
+      if (zone && zone.geom && zone.geom.length > 0) {
+        try {
+          const b = L.polyline(zone.geom).getBounds();
           if (b.isValid()) this.map.fitBounds(b, { padding: [50, 50], animate: false });
         } catch(e) {}
       }

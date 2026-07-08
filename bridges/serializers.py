@@ -101,7 +101,7 @@ class ContractSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contract
-        fields = ["id", "project_name", "value", "department", "status", "zones", "created_at"]
+        fields = ["id", "project_name", "category", "order", "value", "department", "status", "zones", "created_at"]
 
 
 class ZoneSerializer(serializers.ModelSerializer):
@@ -109,5 +109,5 @@ class ZoneSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Zone
-        fields = ["id", "name", "color", "geom", "contracts", "created_at"]
+        fields = ["id", "name", "category", "color", "geom", "contracts", "created_at"]
 

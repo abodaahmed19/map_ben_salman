@@ -189,7 +189,12 @@ class Lighting(models.Model):
 
 
 class Zone(models.Model):
+    CATEGORY_CHOICES = [
+        ("current", "الحالية"),
+        ("new2028", "الجديدة 2028"),
+    ]
     name = models.CharField("اسم النطاق", max_length=200)
+    category = models.CharField("التصنيف", max_length=20, choices=CATEGORY_CHOICES, default="current")
     color = models.CharField("لون الخط", max_length=20, default="#3b82f6")
     # Store polyline coordinates as JSON, e.g. [[lat, lng], [lat, lng], ...]
     geom = models.JSONField("الإحداثيات", default=list)
@@ -205,7 +210,13 @@ class Zone(models.Model):
 
 
 class Contract(models.Model):
+    CATEGORY_CHOICES = [
+        ("current", "الحالية"),
+        ("new2028", "الجديدة 2028"),
+    ]
     project_name = models.CharField("اسم المشروع", max_length=300)
+    category = models.CharField("التصنيف", max_length=20, choices=CATEGORY_CHOICES, default="current")
+    order = models.IntegerField("الترتيب", default=0)
     value = models.FloatField("قيمة صرف العقد", default=0.0)
     department = models.CharField("الادارة", max_length=200, blank=True)
     status = models.CharField("حالة العقد", max_length=100, blank=True, null=True)
@@ -215,7 +226,7 @@ class Contract(models.Model):
     class Meta:
         verbose_name = "عقد"
         verbose_name_plural = "العقود"
-        ordering = ["-created_at"]
+        ordering = ["order", "-created_at"]
 
     def __str__(self):
         return self.project_name

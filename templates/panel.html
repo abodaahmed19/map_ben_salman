@@ -20,6 +20,9 @@
   </script>
 </head>
 <body>
+{% endverbatim %}
+{% csrf_token %}
+{% verbatim %}
 <div id="app" v-cloak>
   <header class="topbar">
     <div class="brand-lockup">
@@ -31,17 +34,20 @@
       <h1>محور طريق الأمير محمد بن سلمان</h1>
     </div>
     <div class="spacer"></div>
-    <a class="btn mint" href="/" target="_blank">👁️ معاينة العرض</a>
-    <a class="btn danger" href="/panel/logout/">🔒 خروج</a>
+    <div style="display: flex; gap: 8px;">
+      <a class="btn mint" href="/" target="_blank">👁️ العرض</a>
+      <a class="btn danger" href="/panel/logout/">🔒 خروج</a>
+    </div>
   </header>
 
   <div class="admin-shell">
     <div class="admin-side">
-      <div class="panel-tabs" style="display:flex; margin-bottom:12px; gap:8px;">
+      <div class="panel-tabs" style="display:flex; margin-bottom:12px; gap:8px; flex-wrap: wrap;">
         <button class="btn" :class="activeTab==='bridges' ? 'primary' : ''" style="flex:1;justify-content:center;padding:4px" @click="setTab('bridges')">🌉 الجسور</button>
         <button class="btn" :class="activeTab==='roads' ? 'primary' : ''" style="flex:1;justify-content:center;padding:4px" @click="setTab('roads')">🛣️ الطرق</button>
         <button class="btn" :class="activeTab==='lightings' ? 'primary' : ''" style="flex:1;justify-content:center;padding:4px" @click="setTab('lightings')">💡 الإنارة</button>
-        <button class="btn" :class="activeTab==='projects' ? 'primary' : ''" style="flex:1;justify-content:center;padding:4px" @click="setTab('projects')">🏗️ المشاريع</button>
+        <button class="btn" :class="activeTab==='projects' ? 'primary' : ''" style="flex:1;justify-content:center;padding:4px" @click="setTab('projects')">🏗️ العقود الحالية</button>
+        <button class="btn" :class="activeTab==='projects_new' ? 'primary' : ''" style="flex:1;justify-content:center;padding:4px; min-width: 140px;" @click="setTab('projects_new')">🚀 العقود الجديدة 2028</button>
       </div>
 
       <div class="hint">
@@ -352,13 +358,13 @@
         </div>
       </div>
 
-      <!-- ==================== قسم المشاريع (نطاقات وعقود) ==================== -->
+      <!-- ==================== قسم المشاريع (الحالية) ==================== -->
       <div v-show="activeTab === 'projects'">
         <div class="card">
           <h3>📍 النطاقات (الخطوط)</h3>
-          <div v-if="!zones.length" class="empty">لا توجد نطاقات بعد.</div>
+          <div v-if="!currentZones.length" class="empty">لا توجد نطاقات بعد.</div>
           
-          <div v-for="z in zones" :key="z.id">
+          <div v-for="z in currentZones" :key="z.id">
             <div class="list-item" :class="{active: selZone && selZone.id === z.id}" @click="selectZone(z.id)">
               <div class="swatch" :style="{background: z.color || '#3b82f6'}"></div>
               <div class="info"><b>{{ z.name || 'نطاق بدون اسم' }}</b><span>{{ z.geom ? z.geom.length + ' نقاط مسار' : 'لا يوجد مسار' }}</span></div>
@@ -368,6 +374,12 @@
             <div class="card" v-if="selZone && selZone.id === z.id" style="margin-top: 8px; margin-bottom: 8px;">
               <h3>✏️ بيانات النطاق</h3>
               <div class="field"><label>اسم النطاق</label><input v-model="selZone.name" @change="saveZone" /></div>
+              <div class="field"><label>التصنيف</label>
+                <select v-model="selZone.category" @change="saveZone">
+                  <option value="current">الحالية</option>
+                  <option value="new2028">الجديدة 2028</option>
+                </select>
+              </div>
               <div class="field">
                 <label>لون الخط</label>
                 <div style="display:flex; align-items:center; gap:10px;">
@@ -386,9 +398,9 @@
 
         <div class="card">
           <h3>🏗️ عقود المشاريع</h3>
-          <div v-if="!contracts.length" class="empty">لا توجد عقود بعد.</div>
+          <div v-if="!currentContracts.length" class="empty">لا توجد عقود بعد.</div>
 
-          <div v-for="c in contracts" :key="c.id">
+          <div v-for="c in currentContracts" :key="c.id">
             <div class="list-item" :class="{active: selContract && selContract.id === c.id}" @click="selectContract(c.id)">
               <div class="swatch" style="background: #eab308"></div>
               <div class="info"><b>{{ c.project_name || 'عقد بدون اسم' }}</b><span style="font-size:12px;">{{ c.value ? c.value.toLocaleString() + ' ريال' : '0 ريال' }} | {{ c.department || 'بدون إدارة' }} | {{ c.status || 'بدون حالة' }}</span></div>
@@ -398,13 +410,20 @@
             <div class="card" v-if="selContract && selContract.id === c.id" style="margin-top: 8px; margin-bottom: 8px;">
               <h3>✏️ بيانات العقد</h3>
               <div class="field"><label>اسم العقد</label><input v-model="selContract.project_name" @change="saveContract" /></div>
+              <div class="field"><label>التصنيف</label>
+                <select v-model="selContract.category" @change="saveContract">
+                  <option value="current">الحالية</option>
+                  <option value="new2028">الجديدة 2028</option>
+                </select>
+              </div>
+              <div class="field"><label>الترتيب</label><input type="number" v-model.number="selContract.order" @change="saveContract" /></div>
               <div class="field"><label>قيمة صرف العقد (ريال)</label><input type="number" step="any" v-model.number="selContract.value" @change="saveContract" /></div>
               <div class="field"><label>اسم الإدارة</label><input v-model="selContract.department" @change="saveContract" /></div>
               <div class="field"><label>حالة العقد</label><input v-model="selContract.status" @change="saveContract" /></div>
               <div class="field">
                 <label>ارتباط النطاقات (اختر واحد أو أكثر)</label>
                 <select multiple v-model="selContract.zones" @change="saveContract" style="height: 100px;">
-                  <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
+                  <option v-for="z in currentZones" :key="z.id" :value="z.id">{{ z.name }}</option>
                 </select>
                 <p class="mini" style="margin-top:4px;color:var(--muted);font-size:11px">اضغط Ctrl (أو Cmd) لاختيار أكثر من نطاق.</p>
               </div>
@@ -414,6 +433,84 @@
             </div>
           </div>
           <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="createContract()">➕ إضافة عقد</button>
+        </div>
+      </div>
+
+      <!-- ==================== قسم المشاريع الجديدة 2028 ==================== -->
+      <div v-show="activeTab === 'projects_new'">
+        <div class="card">
+          <h3>📍 النطاقات (الخطوط)</h3>
+          <div v-if="!newZones.length" class="empty">لا توجد نطاقات بعد.</div>
+          
+          <div v-for="z in newZones" :key="z.id">
+            <div class="list-item" :class="{active: selZone && selZone.id === z.id}" @click="selectZone(z.id)">
+              <div class="swatch" :style="{background: z.color || '#3b82f6'}"></div>
+              <div class="info"><b>{{ z.name || 'نطاق بدون اسم' }}</b><span>{{ z.geom ? z.geom.length + ' نقاط مسار' : 'لا يوجد مسار' }}</span></div>
+              <button class="del" @click.stop="deleteZone(z)">🗑️</button>
+            </div>
+
+            <div class="card" v-if="selZone && selZone.id === z.id" style="margin-top: 8px; margin-bottom: 8px;">
+              <h3>✏️ بيانات النطاق</h3>
+              <div class="field"><label>اسم النطاق</label><input v-model="selZone.name" @change="saveZone" /></div>
+              <div class="field"><label>التصنيف</label>
+                <select v-model="selZone.category" @change="saveZone">
+                  <option value="current">الحالية</option>
+                  <option value="new2028">الجديدة 2028</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>لون الخط</label>
+                <div style="display:flex; align-items:center; gap:10px;">
+                  <input type="color" v-model="selZone.color" @change="saveZone" style="width:48px; height:36px; border:none; border-radius:6px; cursor:pointer; padding:2px; background:transparent;" />
+                  <span style="font-size:13px; color:var(--muted);">{{ selZone.color }}</span>
+                </div>
+              </div>
+              <div class="field-row">
+                <button class="btn" style="justify-content:center" @click="startDrawZone()">📍 رسم المسار على الخريطة</button>
+                <button class="btn danger" style="justify-content:center" @click="deleteZone(selZone)">🗑️ حذف</button>
+              </div>
+            </div>
+          </div>
+          <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="createZone('new2028')">➕ إضافة نطاق</button>
+        </div>
+
+        <div class="card">
+          <h3>🏗️ عقود المشاريع</h3>
+          <div v-if="!newContracts.length" class="empty">لا توجد عقود بعد.</div>
+
+          <div v-for="c in newContracts" :key="c.id">
+            <div class="list-item" :class="{active: selContract && selContract.id === c.id}" @click="selectContract(c.id)">
+              <div class="swatch" style="background: #eab308"></div>
+              <div class="info"><b>{{ c.project_name || 'عقد بدون اسم' }}</b><span style="font-size:12px;">{{ c.value ? c.value.toLocaleString() + ' ريال' : '0 ريال' }} | {{ c.department || 'بدون إدارة' }} | {{ c.status || 'بدون حالة' }}</span></div>
+              <button class="del" @click.stop="deleteContract(c)">🗑️</button>
+            </div>
+
+            <div class="card" v-if="selContract && selContract.id === c.id" style="margin-top: 8px; margin-bottom: 8px;">
+              <h3>✏️ بيانات العقد</h3>
+              <div class="field"><label>اسم العقد</label><input v-model="selContract.project_name" @change="saveContract" /></div>
+              <div class="field"><label>التصنيف</label>
+                <select v-model="selContract.category" @change="saveContract">
+                  <option value="current">الحالية</option>
+                  <option value="new2028">الجديدة 2028</option>
+                </select>
+              </div>
+              <div class="field"><label>الترتيب</label><input type="number" v-model.number="selContract.order" @change="saveContract" /></div>
+              <div class="field"><label>قيمة صرف العقد (ريال)</label><input type="number" step="any" v-model.number="selContract.value" @change="saveContract" /></div>
+              <div class="field"><label>اسم الإدارة</label><input v-model="selContract.department" @change="saveContract" /></div>
+              <div class="field"><label>حالة العقد</label><input v-model="selContract.status" @change="saveContract" /></div>
+              <div class="field">
+                <label>ارتباط النطاقات (اختر واحد أو أكثر)</label>
+                <select multiple v-model="selContract.zones" @change="saveContract" style="height: 100px;">
+                  <option v-for="z in newZones" :key="z.id" :value="z.id">{{ z.name }}</option>
+                </select>
+                <p class="mini" style="margin-top:4px;color:var(--muted);font-size:11px">اضغط Ctrl (أو Cmd) لاختيار أكثر من نطاق.</p>
+              </div>
+              <div class="field-row">
+                <button class="btn danger" style="width:100%;justify-content:center" @click="deleteContract(selContract)">🗑️ حذف العقد</button>
+              </div>
+            </div>
+          </div>
+          <button class="btn primary" style="width:100%;justify-content:center;margin-top:6px" @click="createContract('new2028')">➕ إضافة عقد</button>
         </div>
       </div>
     </div>
@@ -436,7 +533,7 @@
 
 <script src="/static/js/leaflet.js"></script>
 <script src="/static/js/vue.global.prod.js"></script>
-<script src="/static/js/panel.js?v=9"></script>
+<script src="/static/js/panel.js?v=12"></script>
 </body>
 </html>
 {% endverbatim %}

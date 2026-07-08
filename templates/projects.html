@@ -17,8 +17,69 @@
     window.addEventListener("unhandledrejection", function (e) {
       alert("Unhandled Promise Rejection: " + e.reason);
     });
+    {% endverbatim %}
+    const PAGE_CATEGORY = "{{ page_category|default:'current'|escapejs }}";
+    {% verbatim %}
   </script>
   <style>
+        .contracts-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .contracts-table th, .contracts-table td {
+      padding: 10px 12px;
+      text-align: right;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 14px;
+    }
+    .contracts-table th {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+    .contracts-table tr:last-child td {
+      border-bottom: none;
+    }
+        .zones-dropdown-container {
+      position: absolute;
+      top: 84px;
+      right: 20px;
+      z-index: 1000;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 8px 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .zones-dropdown-container label {
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .zones-select {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+    }
+    .zones-select option {
+      background: #0f172a;
+      color: #fff;
+    }
+
     .contract-card {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -36,15 +97,26 @@
       <div class="divider"></div>
       <div class="dept">إدارة أصول النقل والبنية التحتية</div>
     </div>
+    {% endverbatim %}
     <div class="title-block">
       <h1>محور طريق الأمير محمد بن سلمان</h1>
     </div>
     <div class="spacer"></div>
     <div style="display: flex; gap: 8px;">
       <a class="btn" href="/" style="background: rgba(255,255,255,0.1); color: #fff;">⚠️ الحالات</a>
-      <a class="btn primary" href="/projects/">🏗️ المشاريع</a>
+      <a class="btn {% if page_category != 'new2028' %}primary{% endif %}" href="/projects/" {% if page_category == 'new2028' %}style="background: rgba(255,255,255,0.1); color: #fff;"{% endif %}>🏗️ العقود الحالية</a>
+      <a class="btn {% if page_category == 'new2028' %}primary{% endif %}" href="/projects-2028/" {% if page_category != 'new2028' %}style="background: rgba(255,255,255,0.1); color: #fff;"{% endif %}>🚀 العقود الجديدة 2028</a>
     </div>
+    {% verbatim %}
   </header>
+
+    <div class="zones-dropdown-container">
+    <label>📍 النطاق:</label>
+    <select class="zones-select" @change="selectZone(Number($event.target.value))" :value="selectedZone ? selectedZone.id : ''">
+      <option value="">-- اختر النطاق لعرض التفاصيل --</option>
+      <option v-for="z in zones" :key="z.id" :value="z.id">{{ z.name }}</option>
+    </select>
+  </div>
 
   <div id="map"></div>
   <div class="loading" v-if="loading">جارٍ تحميل البيانات…</div>
@@ -62,14 +134,24 @@
       </div>
       <div class="panel-body">
         <div v-if="selectedZone.contracts.length === 0" class="empty" style="color:var(--muted)">لا توجد عقود مسجلة لهذا النطاق.</div>
-        <div v-for="c in selectedZone.contracts" :key="c.id" class="contract-card">
-          <h3 style="margin-top: 0; margin-bottom: 8px; color: #fff; font-size: 16px;">{{ c.project_name }}</h3>
-          <div class="metrics">
-            <div class="metric"><span>القيمة</span><b>{{ (c.value || 0).toLocaleString() }} ريال</b></div>
-            <div class="metric"><span>الإدارة</span><b>{{ c.department || '—' }}</b></div>
-            <div class="metric"><span>الحالة</span><b>{{ c.status || '—' }}</b></div>
-          </div>
-        </div>
+        <table class="contracts-table" v-if="selectedZone.contracts.length > 0">
+          <thead>
+            <tr>
+              <th>اسم المشروع</th>
+              <th>القيمة (ريال)</th>
+              <th>الإدارة</th>
+              <th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="c in selectedZone.contracts" :key="c.id">
+              <td style="color:#fff; font-weight:600;">{{ c.project_name }}</td>
+              <td>{{ (c.value || 0).toLocaleString() }}</td>
+              <td>{{ c.department || '—' }}</td>
+              <td>{{ c.status || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
@@ -77,7 +159,7 @@
 
 <script src="/static/js/leaflet.js"></script>
 <script src="/static/js/vue.global.prod.js"></script>
-<script src="/static/js/projects.js?v=1"></script>
+<script src="/static/js/projects.js?v=3"></script>
 </body>
 </html>
 {% endverbatim %}

@@ -70,7 +70,21 @@ class ZoneViewSet(viewsets.ModelViewSet):
     queryset = Zone.objects.prefetch_related("contracts").all()
     serializer_class = ZoneSerializer
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        cat = self.request.query_params.get("category")
+        if cat:
+            qs = qs.filter(category=cat)
+        return qs
+
 
 class ContractViewSet(viewsets.ModelViewSet):
     queryset = Contract.objects.prefetch_related("zones").all()
     serializer_class = ContractSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        cat = self.request.query_params.get("category")
+        if cat:
+            qs = qs.filter(category=cat)
+        return qs
