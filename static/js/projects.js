@@ -59,6 +59,15 @@ createApp({
       await this.loadData();
     }, 150);
   },
+    computed: {
+    reversedZones() {
+      return this.zones.slice().reverse();
+    },
+    totalContractValue() {
+      if (!this.selectedZone || !this.selectedZone.contracts) return 0;
+      return this.selectedZone.contracts.reduce((sum, c) => sum + Number(c.value || 0), 0);
+    }
+  },
   methods: {
     initMap() {
       this.map = L.map("map", { maxZoom: 19, zoomAnimation: false, markerZoomAnimation: false }).setView(CENTER, ZOOM);
@@ -191,6 +200,10 @@ createApp({
           if (b.isValid()) this.map.fitBounds(b, { padding: [50, 50], animate: false });
         } catch(e) {}
       }
+    },
+    formatProjectName(name) {
+      if (!name) return '';
+      return name.replace(/\*(.*?)\*/g, '<span style="color: #ef4444; font-weight: bold;">$1</span>');
     },
     closePanel() {
       this.selectedZone = null;

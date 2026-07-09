@@ -549,23 +549,27 @@ a { color: var(--mint); }
 /* ====== الجوال ====== */
 @media (max-width: 640px) {
   .topbar {
-    height: 56px; gap: 10px; padding: 0 12px;
+    height: auto; min-height: 56px; padding: 10px 12px 6px;
+    flex-wrap: wrap; gap: 8px; align-items: center;
   }
-  .brand-lockup { gap: 2px; flex: 0 0 auto; flex-direction: column; align-items: flex-start; justify-content: center; }
-  .brand-lockup img { height: 26px; max-width: 38vw; object-fit: contain; }
+  .brand-lockup { flex: 0 0 auto; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .brand-lockup img { height: 28px; max-width: none; }
   .brand-lockup .divider { display: none; }
-  .brand-lockup .dept { display: block; font-size: 9px; max-width: 130px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; margin-top: 2px; }
-  /* العنوان في التدفق العادي (مش متمركز مطلقًا) حتى لا يركب على اللوجو */
-  .title-block { position: static; transform: none; left: auto; flex: 1 1 auto; min-width: 0; text-align: start; }
-  .title-block h1 {
-    font-size: 12.5px; line-height: 1.25; white-space: normal;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-  }
+  .brand-lockup .dept { display: block; font-size: 10px; text-align: center; max-width: 140px; margin-top: 0; white-space: normal; line-height: 1.2; }
+  
+  .title-block { display: block; position: static; transform: none; flex: 1; text-align: end; }
+  .title-block h1 { font-size: 13.5px; line-height: 1.3; }
   .topbar .spacer { display: none; }
-  .topbar .btn { padding: 7px 9px; font-size: 11.5px; }
+  
+  .topbar > div:last-child {
+    width: 100%; display: flex; gap: 8px !important; overflow-x: auto;
+    padding-bottom: 6px; justify-content: flex-start;
+  }
+  .topbar > div:last-child::-webkit-scrollbar { display: none; }
+  .topbar .btn { flex: 0 0 auto; padding: 8px 12px; font-size: 12.5px; white-space: nowrap; }
 
-  #map, #admin-map, .loading { inset-block-start: 56px; }
-  .admin-shell { inset-block-start: 56px; }
+  #map, #admin-map, .loading { inset-block-start: 110px; }
+  .admin-shell { inset-block-start: 110px; }
 
   /* الفلاتر: شريط سفلي قابل للتمرير الأفقي */
   .filter-panel {
