@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/leaflet.css" />
-  <link rel="stylesheet" href="/static/css/styles.css?v=11" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=12" />
   <script>
     window.addEventListener("error", function (e) {
       alert("Error: " + e.message + " at " + e.filename + ":" + e.lineno);
@@ -152,7 +152,10 @@
           </thead>
           <tbody>
             <tr v-for="c in selectedZone.contracts" :key="c.id">
-              <td style="color:#fff; font-weight:600;"><span v-html="formatProjectName(c.project_name)"></span></td>
+              <td style="color:#fff; font-weight:600;">
+                <span v-html="formatProjectName(c.project_name)"></span>
+                <span v-if="c.is_overlapping" class="chip" style="background:#f59e0b; color:#fff; font-size:10px; padding:2px 4px; border-radius:4px; margin-inline-start:6px; display:inline-block; vertical-align:middle;">متداخل</span>
+              </td>
               <td>{{ (c.value || 0).toLocaleString() }}</td>
               <td>{{ c.department || '—' }}</td>
               <td>{{ c.status || '—' }}</td>
@@ -166,7 +169,7 @@
 
 <script src="/static/js/leaflet.js"></script>
 <script src="/static/js/vue.global.prod.js"></script>
-<script src="/static/js/projects.js?v=7"></script>
+<script src="/static/js/projects.js?v=12"></script>
 </body>
 </html>
 {% endverbatim %}

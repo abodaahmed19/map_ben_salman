@@ -95,6 +95,23 @@ createApp({
         ]);
         this.zones = zonesRes;
         this.bridges = bridgesRes;
+        
+        const contractCounts = {};
+        this.zones.forEach(z => {
+          if (z.contracts) {
+            z.contracts.forEach(c => {
+              contractCounts[c.id] = (contractCounts[c.id] || 0) + 1;
+            });
+          }
+        });
+        this.zones.forEach(z => {
+          if (z.contracts) {
+            z.contracts.forEach(c => {
+              c.is_overlapping = contractCounts[c.id] > 1;
+            });
+          }
+        });
+
         this.renderZones();
         this.renderBridges();
       } catch (e) {
