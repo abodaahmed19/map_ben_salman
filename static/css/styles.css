@@ -552,24 +552,24 @@ a { color: var(--mint); }
     height: auto; min-height: 56px; padding: 10px 12px 6px;
     flex-wrap: wrap; gap: 8px; align-items: center;
   }
-  .brand-lockup { flex: 0 0 auto; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  .brand-lockup { flex: 1 1 100%; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
   .brand-lockup img { height: 28px; max-width: none; }
   .brand-lockup .divider { display: none; }
   .brand-lockup .dept { display: block; font-size: 10px; text-align: center; max-width: 140px; margin-top: 0; white-space: normal; line-height: 1.2; }
   
-  .title-block { display: block; position: static; transform: none; flex: 1; text-align: end; }
-  .title-block h1 { font-size: 13.5px; line-height: 1.3; }
+  .title-block { display: block; position: static; transform: none; flex: 1 1 100%; text-align: center; margin-top: 2px; margin-bottom: 2px; }
+  .title-block h1 { font-size: 14px; line-height: 1.3; }
   .topbar .spacer { display: none; }
   
   .topbar > div:last-child {
     width: 100%; display: flex; gap: 8px !important; overflow-x: auto;
-    padding-bottom: 6px; justify-content: flex-start;
+    padding-bottom: 6px; justify-content: center;
   }
   .topbar > div:last-child::-webkit-scrollbar { display: none; }
   .topbar .btn { flex: 0 0 auto; padding: 8px 12px; font-size: 12.5px; white-space: nowrap; }
 
-  #map, #admin-map, .loading { inset-block-start: 110px; }
-  .admin-shell { inset-block-start: 110px; }
+  #map, #admin-map, .loading { inset-block-start: 144px; }
+  .admin-shell { inset-block-start: 144px; }
 
   /* الفلاتر: شريط سفلي قابل للتمرير الأفقي */
   .filter-panel {
@@ -600,4 +600,5 @@ a { color: var(--mint); }
   .kpicard b { font-size: 22px; }
   .chart-grid { grid-template-columns: 1fr; }
   .filter-field select { min-width: 140px; }
+  .filter-toggle-btn { top: 154px; inset-inline-start: 10px; }
 }

@@ -115,14 +115,20 @@ createApp({
           const p = [b.lat, b.lng];
           
           this.zones.forEach(zone => {
-            if (!zone.geom || zone.geom.length < 2) return;
-            for (let i = 0; i < zone.geom.length - 1; i++) {
-              const d = distToSegmentSquared(p, zone.geom[i], zone.geom[i+1]);
-              if (d < minDistance) {
-                minDistance = d;
-                closestZone = zone;
+            if (!zone.geom || zone.geom.length === 0) return;
+            const isMulti = Array.isArray(zone.geom[0]) && Array.isArray(zone.geom[0][0]);
+            const polylines = isMulti ? zone.geom : [zone.geom];
+            
+            polylines.forEach(line => {
+              if (line.length < 2) return;
+              for (let i = 0; i < line.length - 1; i++) {
+                const d = distToSegmentSquared(p, line[i], line[i+1]);
+                if (d < minDistance) {
+                  minDistance = d;
+                  closestZone = zone;
+                }
               }
-            }
+            });
           });
 
           // If bridge is within ~5km of a zone, use its color (0.002 squared = 0.000004)
