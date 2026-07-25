@@ -1,0 +1,34 @@
+﻿.\.venv\Scripts\python.exe : Traceback (most recent call last):
+At C:\Users\Eng Abdelatif\AppData\Local\Temp\ps-script-715eeae4-45e2-4fd3-aa08-236375102f43.ps1:112 char:1
++ .\.venv\Scripts\python.exe manage.py import_contracts_xlsx --excel "C ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\Eng Abdelatif\Desktop\00\map_ben_salman\manage.py", line 13, in <module>
+    main()
+  File "C:\Users\Eng Abdelatif\Desktop\00\map_ben_salman\manage.py", line 9, in main
+    execute_from_command_line(sys.argv)
+  File "C:\Users\Eng Abdelatif\Desktop\00\map_ben_salman\.venv\Lib\site-packages\django\core\management\__init__.py", 
+line 443, in execute_from_command_line
+    utility.execute()
+  File "C:\Users\Eng Abdelatif\Desktop\00\map_ben_salman\.venv\Lib\site-packages\django\core\management\__init__.py", 
+line 437, in execute
+    self.fetch_command(subcommand).run_from_argv(self.argv)
+  File "C:\Users\Eng Abdelatif\Desktop\00\map_ben_salman\.venv\Lib\site-packages\django\core\management\base.py", line 
+420, in run_from_argv
+    self.execute(*args, **cmd_options)
+  File "C:\Users\Eng Abdelatif\Desktop\00\map_ben_salman\.venv\Lib\site-packages\django\core\management\base.py", line 
+464, in execute
+    output = self.handle(*args, **options)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Eng Abdelatif\Desktop\00\map_ben_salman\bridges\management\commands\import_contracts_xlsx.py", line 
+199, in handle
+    self.stdout.write(self.style.SUCCESS(
+  File "C:\Users\Eng Abdelatif\Desktop\00\map_ben_salman\.venv\Lib\site-packages\django\core\management\base.py", line 
+185, in write
+    self._out.write(style_func(msg))
+  File "C:\Users\Eng Abdelatif\AppData\Local\Programs\Python\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 0-5: character maps to <undefined>

@@ -286,6 +286,46 @@ a { color: var(--mint); }
 }
 .filter-toggle-btn:hover { background: var(--green-700); border-color: var(--mint); transform: translateY(-1px); }
 
+/* ====== أصول المحور ====== */
+.btn.axis-nav {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border-color: rgba(255,255,255,0.12);
+}
+.btn.axis-nav:hover {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.14);
+}
+.btn.axis-nav.active {
+  background: linear-gradient(135deg, #b45309, #f59e0b);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, .35);
+}
+.btn.axis-nav .axis-count {
+  background: rgba(255,255,255,.2);
+  border-radius: 8px;
+  padding: 1px 7px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.axis-panel {
+  position: fixed; top: 84px; inset-inline-end: 22px; z-index: 1050;
+  display: flex; flex-direction: column; gap: 10px;
+  background: var(--panel); backdrop-filter: blur(12px);
+  border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+  box-shadow: var(--shadow); width: min(320px, calc(100vw - 40px)); max-height: calc(100vh - 180px); overflow-y: auto;
+}
+.axis-page-panel { width: min(320px, calc(100vw - 40px)); max-height: calc(100vh - 120px); overflow-y: auto; }
+.axis-reset-btn { flex: 1; font-size: 12px !important; }
+.leaflet-pane.axis-pane { z-index: 350 !important; }
+.axis-popup .leaflet-popup-content { margin: 10px 12px; font-family: Tajawal, sans-serif; direction: rtl; }
+.axis-popup .leaflet-popup-content b { color: #f59e0b; }
+.axis-popup .axis-popup-row { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+.axis-popup .axis-popup-row span { color: var(--muted, #9fb1aa); }
+.axis-popup .axis-popup-title { font-size: 14px; font-weight: 800; margin-bottom: 8px; color: #fff; }
+
 .close-filter-btn {
   background: rgba(255,255,255,0.05); border: 1px solid transparent; color: var(--muted); 
   border-radius: 6px; cursor: pointer; font-size: 14px; padding: 2px 6px; transition: .15s;
@@ -601,4 +641,5 @@ a { color: var(--mint); }
   .chart-grid { grid-template-columns: 1fr; }
   .filter-field select { min-width: 140px; }
   .filter-toggle-btn { top: 154px; inset-inline-start: 10px; }
+  .axis-panel { top: 150px; inset-inline-end: 10px; width: calc(100vw - 20px); max-height: calc(100vh - 170px); }
 }

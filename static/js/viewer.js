@@ -72,7 +72,7 @@ createApp({
     uniqueBridgeDefectTypes() {
       const types = this.bridgeCases.map(c => c.title).filter(Boolean);
       return [...new Set(types)].sort();
-    }
+    },
   },
   watch: {
     filterType() { this.applyFilter(); },
