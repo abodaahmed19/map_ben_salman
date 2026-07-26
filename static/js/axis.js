@@ -12,16 +12,31 @@ function baseLayers() {
 
 function axisPopupHtml(p) {
   const row = (label, value) => value ? `<div class="axis-popup-row"><span>${label}</span><b>${value}</b></div>` : "";
-  return `<div class="axis-popup-title">${p.street || p.name || "مقطع"}</div>
-    ${row("رمز المقطع", p.segment_code)}
+  if (p.layer === "signs") {
+    return `<div class="axis-popup-title">لوحة إرشادية</div>${row("خط العرض", p.x)}${row("خط الطول", p.y)}`;
+  }
+  if (p.layer === "lighting") {
+    const title = p.kind || p.name || "إنارة";
+    const desc = (p.description || "").replace(/\n/g, "<br>");
+    return `<div class="axis-popup-title">${title}</div>${desc ? `<div class="axis-popup-desc">${desc}</div>` : ""}`;
+  }
+  return `<div class="axis-popup-title">${p.segment_code || p.name || "مقطع"}</div>
     ${row("البلدية", p.municipality)}
     ${row("الحي", p.district)}
     ${row("الحي الفرعي", p.sub_district)}
-    ${row("الاتجاه", p.direction_label || p.direction)}
     ${row("من", p.from_street)}
     ${row("إلى", p.to_street)}
     ${row("الطول", p.length_m ? `${Number(p.length_m).toFixed(1)} م` : "")}
     ${row("العرض", p.width_m ? `${p.width_m} م` : "")}`;
+}
+
+function pointIcon(color, size = 8) {
+  return L.divIcon({
+    className: "axis-point-icon",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,.85);box-shadow:0 0 0 1px rgba(0,0,0,.35)"></span>`,
+  });
 }
 
 createApp({
@@ -30,30 +45,41 @@ createApp({
       loading: true,
       filterOpen: true,
       map: null,
-      axisFeatures: [],
-      axisLayer: null,
-      aStreet: "", aMunicipality: "", aDistrict: "", aDirection: "",
+      roadFeatures: [],
+      lightingFeatures: [],
+      signFeatures: [],
+      roadsLayer: null,
+      lightingLayer: null,
+      signsLayer: null,
+      showRoads: true,
+      showLighting: true,
+      showSigns: true,
+      aMunicipality: "",
+      aDistrict: "",
     };
   },
   computed: {
-    filteredAxisFeatures() {
-      return this.axisFeatures.filter(f => this.axisFeatureMatches(f.properties || {}));
+    filteredRoadFeatures() {
+      return this.roadFeatures.filter(f => this.roadFeatureMatches(f.properties || {}));
     },
-    visibleAxisCount() { return this.filteredAxisFeatures.length; },
+    visibleRoadCount() { return this.showRoads ? this.filteredRoadFeatures.length : 0; },
+    visibleLightingCount() { return this.showLighting ? this.lightingFeatures.length : 0; },
+    visibleSignsCount() { return this.showSigns ? this.signFeatures.length : 0; },
+    visibleTotalCount() {
+      return this.visibleRoadCount + this.visibleLightingCount + this.visibleSignsCount;
+    },
     axisMunicipalities() {
       const set = new Set();
-      this.axisFeatures.forEach(f => {
+      this.roadFeatures.forEach(f => {
         const p = f.properties || {};
-        if (this.aStreet && p.street !== this.aStreet) return;
         if (p.municipality) set.add(p.municipality);
       });
       return [...set].sort();
     },
     axisDistricts() {
       const set = new Set();
-      this.axisFeatures.forEach(f => {
+      this.roadFeatures.forEach(f => {
         const p = f.properties || {};
-        if (this.aStreet && p.street !== this.aStreet) return;
         if (this.aMunicipality && p.municipality !== this.aMunicipality) return;
         if (p.district) set.add(p.district);
       });
@@ -61,10 +87,11 @@ createApp({
     },
   },
   watch: {
-    aStreet() { this.onAxisFilterChange(); },
+    showRoads() { this.renderLayers(false); },
+    showLighting() { this.renderLayers(false); },
+    showSigns() { this.renderLayers(false); },
     aMunicipality() { this.onAxisMunicipalityChange(); },
     aDistrict() { this.onAxisFilterChange(); },
-    aDirection() { this.onAxisFilterChange(); },
   },
   async mounted() {
     this.initMap();
@@ -87,21 +114,29 @@ createApp({
     },
     async load() {
       try {
-        const res = await fetch("/static/data/axis-assets.geojson");
-        const data = await res.json();
-        this.axisFeatures = data.features || [];
-        this.renderAxisLayer(true);
+        const [roadsRes, lightingRes, signsRes] = await Promise.all([
+          fetch("/static/data/axis-roads.geojson"),
+          fetch("/static/data/axis-lighting.geojson"),
+          fetch("/static/data/axis-signs.geojson"),
+        ]);
+        const [roads, lighting, signs] = await Promise.all([
+          roadsRes.json(),
+          lightingRes.json(),
+          signsRes.json(),
+        ]);
+        this.roadFeatures = roads.features || [];
+        this.lightingFeatures = lighting.features || [];
+        this.signFeatures = signs.features || [];
+        this.renderLayers(true);
       } catch (e) {
         console.error("axis assets load failed", e);
       } finally {
         this.loading = false;
       }
     },
-    axisFeatureMatches(p) {
-      if (this.aStreet && p.street !== this.aStreet) return false;
+    roadFeatureMatches(p) {
       if (this.aMunicipality && p.municipality !== this.aMunicipality) return false;
       if (this.aDistrict && p.district !== this.aDistrict) return false;
-      if (this.aDirection && p.direction !== this.aDirection) return false;
       return true;
     },
     onAxisMunicipalityChange() {
@@ -109,47 +144,93 @@ createApp({
       this.onAxisFilterChange();
     },
     onAxisFilterChange() {
-      this.renderAxisLayer(false);
+      this.renderLayers(false);
     },
     resetAxisFilters() {
-      this.aStreet = "";
+      this.showRoads = true;
+      this.showLighting = true;
+      this.showSigns = true;
       this.aMunicipality = "";
       this.aDistrict = "";
-      this.aDirection = "";
       this.onAxisFilterChange();
     },
-    clearAxisLayer() {
-      if (this.axisLayer) {
-        this.map.removeLayer(this.axisLayer);
-        this.axisLayer = null;
+    clearLayer(name) {
+      if (this[name]) {
+        this.map.removeLayer(this[name]);
+        this[name] = null;
       }
     },
-    renderAxisLayer(fit = false) {
+    renderLayers(fit = false) {
       if (!this.map) return;
-      this.clearAxisLayer();
-      const features = this.filteredAxisFeatures;
-      if (!features.length) return;
-      this.axisLayer = L.geoJSON({ type: "FeatureCollection", features }, {
-        style: (f) => ({
-          color: (f.properties && f.properties.color) || "#fbbf24",
-          weight: 4,
-          opacity: 0.92,
-          lineCap: "round",
-          lineJoin: "round",
-        }),
-        onEachFeature: (feature, layer) => {
-          const p = feature.properties || {};
-          layer.bindPopup(axisPopupHtml(p), { className: "axis-popup", maxWidth: 280 });
-        },
-      }).addTo(this.map);
-      if (fit) {
-        try { this.map.fitBounds(this.axisLayer.getBounds(), { padding: [60, 70], maxZoom: 14, animate: false }); } catch (e) {}
+      this.clearLayer("roadsLayer");
+      this.clearLayer("lightingLayer");
+      this.clearLayer("signsLayer");
+
+      const boundsLayers = [];
+
+      if (this.showRoads && this.filteredRoadFeatures.length) {
+        this.roadsLayer = L.geoJSON({ type: "FeatureCollection", features: this.filteredRoadFeatures }, {
+          style: (f) => ({
+            color: (f.properties && f.properties.color) || "#38bdf8",
+            weight: 4,
+            opacity: 0.92,
+            lineCap: "round",
+            lineJoin: "round",
+          }),
+          onEachFeature: (feature, layer) => {
+            layer.bindPopup(axisPopupHtml(feature.properties || {}), { className: "axis-popup", maxWidth: 280 });
+          },
+        }).addTo(this.map);
+        boundsLayers.push(this.roadsLayer);
+      }
+
+      if (this.showLighting && this.lightingFeatures.length) {
+        this.lightingLayer = L.geoJSON({ type: "FeatureCollection", features: this.lightingFeatures }, {
+          style: (f) => {
+            const isLine = f.geometry && f.geometry.type === "LineString";
+            return {
+              color: (f.properties && f.properties.color) || "#fbbf24",
+              weight: isLine ? 3 : 0,
+              opacity: 0.9,
+              dashArray: isLine ? "6 4" : null,
+            };
+          },
+          pointToLayer: (feature, latlng) => L.marker(latlng, {
+            icon: pointIcon((feature.properties && feature.properties.color) || "#fde047", 7),
+          }),
+          onEachFeature: (feature, layer) => {
+            layer.bindPopup(axisPopupHtml(feature.properties || {}), { className: "axis-popup", maxWidth: 280 });
+          },
+        }).addTo(this.map);
+        boundsLayers.push(this.lightingLayer);
+      }
+
+      if (this.showSigns && this.signFeatures.length) {
+        this.signsLayer = L.geoJSON({ type: "FeatureCollection", features: this.signFeatures }, {
+          pointToLayer: (feature, latlng) => L.marker(latlng, {
+            icon: pointIcon((feature.properties && feature.properties.color) || "#fb923c", 9),
+          }),
+          onEachFeature: (feature, layer) => {
+            layer.bindPopup(axisPopupHtml(feature.properties || {}), { className: "axis-popup", maxWidth: 240 });
+          },
+        }).addTo(this.map);
+        boundsLayers.push(this.signsLayer);
+      }
+
+      if (fit && boundsLayers.length) {
+        try {
+          const group = L.featureGroup(boundsLayers);
+          this.map.fitBounds(group.getBounds(), { padding: [60, 70], maxZoom: 14, animate: false });
+        } catch (e) {}
       }
     },
     zoomToAxis() {
-      if (this.axisLayer) {
-        try { this.map.fitBounds(this.axisLayer.getBounds(), { padding: [60, 70], maxZoom: 16, animate: false }); } catch (e) {}
-      }
+      const layers = [this.roadsLayer, this.lightingLayer, this.signsLayer].filter(Boolean);
+      if (!layers.length) return;
+      try {
+        const group = L.featureGroup(layers);
+        this.map.fitBounds(group.getBounds(), { padding: [60, 70], maxZoom: 16, animate: false });
+      } catch (e) {}
     },
   },
 }).mount("#app");

@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/leaflet.css" />
-  <link rel="stylesheet" href="/static/css/styles.css?v=13" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=16" />
   <script>
     window.addEventListener("error", function (e) {
       alert("Error: " + e.message + " at " + e.filename + ":" + e.lineno);
@@ -53,42 +53,33 @@
       <button class="close-filter-btn" @click="filterOpen = false">✕</button>
     </div>
     <div class="chip-group">
-      <span class="chip-label">الشارع</span>
+      <span class="chip-label">الطبقات</span>
       <div class="chips">
-        <button class="chip" :class="{active: aStreet===''}" @click="aStreet=''">الكل</button>
-        <button class="chip" :class="{active: aStreet==='طريق الحرمين'}" style="--chip:#f59e0b" @click="aStreet = aStreet==='طريق الحرمين' ? '' : 'طريق الحرمين'"><i class="dot"></i>طريق الحرمين</button>
-        <button class="chip" :class="{active: aStreet==='طريق جدة_مكة'}" style="--chip:#38bdf8" @click="aStreet = aStreet==='طريق جدة_مكة' ? '' : 'طريق جدة_مكة'"><i class="dot"></i>طريق جدة_مكة</button>
-        <button class="chip" :class="{active: aStreet==='طريق الفلاح'}" style="--chip:#a78bfa" @click="aStreet = aStreet==='طريق الفلاح' ? '' : 'طريق الفلاح'"><i class="dot"></i>طريق الفلاح</button>
+        <button class="chip" :class="{active: showRoads}" style="--chip:#38bdf8" @click="showRoads = !showRoads"><i class="dot"></i>الطرق</button>
+        <button class="chip" :class="{active: showLighting}" style="--chip:#fbbf24" @click="showLighting = !showLighting"><i class="dot"></i>الإنارة</button>
+        <button class="chip" :class="{active: showSigns}" style="--chip:#fb923c" @click="showSigns = !showSigns"><i class="dot"></i>اللوحات الإرشادية</button>
       </div>
     </div>
-    <div class="filter-field">
-      <label>البلدية</label>
-      <select v-model="aMunicipality">
-        <option value="">الكل</option>
-        <option v-for="m in axisMunicipalities" :key="m" :value="m">{{ m }}</option>
-      </select>
-    </div>
-    <div class="filter-field">
-      <label>الحي</label>
-      <select v-model="aDistrict">
-        <option value="">الكل</option>
-        <option v-for="d in axisDistricts" :key="d" :value="d">{{ d }}</option>
-      </select>
-    </div>
-    <div class="chip-group">
-      <span class="chip-label">الاتجاه</span>
-      <div class="chips">
-        <button class="chip" :class="{active: aDirection===''}" @click="aDirection=''">الكل</button>
-        <button class="chip" :class="{active: aDirection==='S'}" style="--chip:#34d399" @click="aDirection = aDirection==='S' ? '' : 'S'"><i class="dot"></i>جنوب</button>
-        <button class="chip" :class="{active: aDirection==='N'}" style="--chip:#60a5fa" @click="aDirection = aDirection==='N' ? '' : 'N'"><i class="dot"></i>شمال</button>
-        <button class="chip" :class="{active: aDirection==='E'}" style="--chip:#f472b6" @click="aDirection = aDirection==='E' ? '' : 'E'"><i class="dot"></i>شرق</button>
-        <button class="chip" :class="{active: aDirection==='W'}" style="--chip:#fbbf24" @click="aDirection = aDirection==='W' ? '' : 'W'"><i class="dot"></i>غرب</button>
+    <template v-if="showRoads">
+      <div class="filter-field">
+        <label>البلدية</label>
+        <select v-model="aMunicipality">
+          <option value="">الكل</option>
+          <option v-for="m in axisMunicipalities" :key="m" :value="m">{{ m }}</option>
+        </select>
       </div>
-    </div>
+      <div class="filter-field">
+        <label>الحي</label>
+        <select v-model="aDistrict">
+          <option value="">الكل</option>
+          <option v-for="d in axisDistricts" :key="d" :value="d">{{ d }}</option>
+        </select>
+      </div>
+    </template>
     <div class="filter-actions">
-      <button class="count-chip" @click="zoomToAxis" title="تقريب على المقاطع المعروضة">
-        <span>المقاطع</span>
-        <b>{{ visibleAxisCount }}</b>
+      <button class="count-chip" @click="zoomToAxis" title="تقريب على العناصر المعروضة">
+        <span>العناصر</span>
+        <b>{{ visibleTotalCount }}</b>
         <small>🔍</small>
       </button>
       <button class="dash-btn axis-reset-btn" @click="resetAxisFilters">↺ إعادة ضبط</button>
@@ -98,7 +89,7 @@
 
 <script src="/static/js/leaflet.js"></script>
 <script src="/static/js/vue.global.prod.js"></script>
-<script src="/static/js/axis.js?v=1"></script>
+<script src="/static/js/axis.js?v=3"></script>
 </body>
 </html>
 {% endverbatim %}
