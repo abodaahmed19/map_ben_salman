@@ -1,0 +1,7 @@
+LineStyle
+LinearRing
+MultiGeometry
+PolyStyle
+Polygon
+coordinates
+outline

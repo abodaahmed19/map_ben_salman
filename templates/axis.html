@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/leaflet.css" />
-  <link rel="stylesheet" href="/static/css/styles.css?v=16" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=17" />
   <script>
     window.addEventListener("error", function (e) {
       alert("Error: " + e.message + " at " + e.filename + ":" + e.lineno);
@@ -47,7 +47,7 @@
     <span>الفلاتر</span>
   </button>
 
-  <div class="filter-panel axis-page-panel" v-show="filterOpen">
+  <div class="filter-panel axis-filter-panel" v-show="filterOpen">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
       <span style="font-size: 14px; font-weight: 800; color: #fff;">أصول المحور</span>
       <button class="close-filter-btn" @click="filterOpen = false">✕</button>
@@ -55,12 +55,14 @@
     <div class="chip-group">
       <span class="chip-label">الطبقات</span>
       <div class="chips">
+        <button class="chip" :class="{active: showStormwater}" style="--chip:#22d3ee" @click="showStormwater = !showStormwater"><i class="dot"></i>السيول</button>
         <button class="chip" :class="{active: showRoads}" style="--chip:#38bdf8" @click="showRoads = !showRoads"><i class="dot"></i>الطرق</button>
+        <button class="chip" :class="{active: showBridges}" style="--chip:#c084fc" @click="showBridges = !showBridges"><i class="dot"></i>الجسور</button>
         <button class="chip" :class="{active: showLighting}" style="--chip:#fbbf24" @click="showLighting = !showLighting"><i class="dot"></i>الإنارة</button>
         <button class="chip" :class="{active: showSigns}" style="--chip:#fb923c" @click="showSigns = !showSigns"><i class="dot"></i>اللوحات الإرشادية</button>
       </div>
     </div>
-    <template v-if="showRoads">
+    <template v-if="showStormwater">
       <div class="filter-field">
         <label>البلدية</label>
         <select v-model="aMunicipality">
@@ -89,7 +91,7 @@
 
 <script src="/static/js/leaflet.js"></script>
 <script src="/static/js/vue.global.prod.js"></script>
-<script src="/static/js/axis.js?v=3"></script>
+<script src="/static/js/axis.js?v=6"></script>
 </body>
 </html>
 {% endverbatim %}

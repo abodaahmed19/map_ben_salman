@@ -1,8 +1,10 @@
-"""Convert axis KMZ layers (roads, lighting, signs) to GeoJSON."""
+"""Convert axis KMZ layers (stormwater, roads, lighting, signs) and export bridges."""
 from __future__ import annotations
 
 import json
+import os
 import re
+import sys
 import zipfile
 import xml.etree.ElementTree as ET
 from html import unescape
@@ -12,8 +14,11 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "static" / "data"
 NS = {"k": "http://www.opengis.net/kml/2.2"}
 
-ROADS_KMZ = Path(
+STORMWATER_KMZ = Path(
     r"C:\Users\Eng Abdelatif\Downloads\طريق الأمير محمد بن سلمانkmz\طريق الأمير محمد بن سلمانkmz.kmz"
+)
+AXIS_ROADS_KMZ = Path(
+    r"C:\Users\Eng Abdelatif\Downloads\محور الامير محمد بن سلمان.kmz"
 )
 LIGHTING_KMZ = Path(
     r"C:\Users\Eng Abdelatif\Downloads\شبكة الإنارة بمحور طريق الأمير محمد بن سلمان من الحرب حتى كبري بحرة.kmz"
@@ -22,11 +27,13 @@ SIGNS_KMZ = Path(
     r"C:\Users\Eng Abdelatif\Downloads\اللوحات الارشادية طريق الامير محمد بن سلمان (1).kmz"
 )
 
-ROADS_STREET = "طريق جدة_مكة"
+STORMWATER_STREET = "طريق جدة_مكة"
+STORMWATER_COLOR = "#22d3ee"
 ROADS_COLOR = "#38bdf8"
 LIGHTING_LINE_COLOR = "#fbbf24"
 LIGHTING_POINT_COLOR = "#fde047"
 SIGNS_COLOR = "#fb923c"
+BRIDGES_COLOR = "#c084fc"
 DIR_LABELS = {"N": "شمال", "S": "جنوب", "E": "شرق", "W": "غرب"}
 
 
@@ -109,14 +116,28 @@ def lighting_kind(desc: str, style: str) -> str:
     return "نقطة إنارة"
 
 
-def convert_roads() -> dict:
-    kml = read_kml(ROADS_KMZ)
+def polygon_rings(pm) -> list[list[list[float]]]:
+    rings: list[list[list[float]]] = []
+    for polygon in pm.findall(".//k:Polygon", NS):
+        ring_el = polygon.find(".//k:outerBoundaryIs//k:LinearRing/k:coordinates", NS)
+        if ring_el is None or not ring_el.text:
+            continue
+        ring = parse_coords(ring_el.text)
+        if len(ring) >= 3:
+            if ring[0] != ring[-1]:
+                ring.append(ring[0])
+            rings.append(ring)
+    return rings
+
+
+def convert_stormwater() -> dict:
+    kml = read_kml(STORMWATER_KMZ)
     root = ET.fromstring(kml.encode("utf-8"))
     features = []
     for pm in root.findall(".//k:Placemark", NS):
         name_el = pm.find("k:name", NS)
         street = (name_el.text or "").strip()
-        if street != ROADS_STREET:
+        if street != STORMWATER_STREET:
             continue
         desc_el = pm.find("k:description", NS)
         attrs = parse_description(desc_el.text if desc_el is not None else "")
@@ -126,22 +147,18 @@ def convert_roads() -> dict:
         coords = parse_coords(line.text)
         if len(coords) < 2:
             continue
-        direction = attrs.get("اتجاه المقطع", "")
         props = {
-            "layer": "roads",
+            "layer": "stormwater",
             "name": street,
-            "street": street,
             "segment_code": attrs.get("رمز المقطع", ""),
             "from_street": attrs.get("من الشارع", ""),
             "to_street": attrs.get("الى الشارع", ""),
-            "direction": direction,
-            "direction_label": DIR_LABELS.get(direction, direction),
             "municipality": attrs.get("اسم البلدية باللغة العربية", ""),
             "district": attrs.get("اسم الحي باللغة العربية", ""),
             "sub_district": attrs.get("اسم الحي الفرعي باللغة العربية", ""),
             "length_m": attrs.get("طول المقطع", ""),
             "width_m": attrs.get("عرض المقطع", ""),
-            "color": ROADS_COLOR,
+            "color": STORMWATER_COLOR,
         }
         features.append(
             {
@@ -150,6 +167,37 @@ def convert_roads() -> dict:
                 "properties": props,
             }
         )
+    return {"type": "FeatureCollection", "features": features}
+
+
+def convert_axis_roads() -> dict:
+    kml = read_kml(AXIS_ROADS_KMZ)
+    root = ET.fromstring(kml.encode("utf-8"))
+    features = []
+    for pm in root.findall(".//k:Placemark", NS):
+        name_el = pm.find("k:name", NS)
+        name = (name_el.text or "").strip()
+        desc_el = pm.find("k:description", NS)
+        attrs = parse_description(desc_el.text if desc_el is not None else "")
+        rings = polygon_rings(pm)
+        if not rings:
+            continue
+        props = {
+            "layer": "roads",
+            "name": attrs.get("Road_Name", name) or name,
+            "road_id": attrs.get("SEC_ID", "") or attrs.get("Global_ID", ""),
+            "municipality": attrs.get("MUNICIPALI", ""),
+            "district": attrs.get("District_N", ""),
+            "length_m": attrs.get("True_Lengh", "") or attrs.get("SHAPE_Leng", ""),
+            "type": attrs.get("Type", "") or attrs.get("تصنيف", ""),
+            "color": ROADS_COLOR,
+        }
+        geometry = (
+            {"type": "Polygon", "coordinates": rings}
+            if len(rings) == 1
+            else {"type": "MultiPolygon", "coordinates": [[r] for r in rings]}
+        )
+        features.append({"type": "Feature", "geometry": geometry, "properties": props})
     return {"type": "FeatureCollection", "features": features}
 
 
@@ -168,7 +216,7 @@ def convert_lighting() -> dict:
         style_m = re.search(r"<styleUrl>(.*?)</styleUrl>", block, re.S | re.I)
         name = plain_text(name_m.group(1) if name_m else "")
         desc = plain_text(desc_m.group(1) if desc_m else "")
-        style = (style_m.group(1).strip() if style_m else "")
+        style = style_m.group(1).strip() if style_m else ""
         kind = lighting_kind(desc, style)
         if gtype == "LineString" and len(coords) < 2:
             continue
@@ -215,6 +263,30 @@ def convert_signs() -> dict:
     return {"type": "FeatureCollection", "features": features}
 
 
+def convert_bridges() -> dict:
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+    sys.path.insert(0, str(ROOT))
+    import django
+
+    django.setup()
+    from bridges.models import Bridge
+
+    features = []
+    for bridge in Bridge.objects.all().order_by("id"):
+        features.append(
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [bridge.lng, bridge.lat]},
+                "properties": {
+                    "layer": "bridges",
+                    "name": bridge.name,
+                    "color": BRIDGES_COLOR,
+                },
+            }
+        )
+    return {"type": "FeatureCollection", "features": features}
+
+
 def write_geojson(path: Path, data: dict) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
@@ -223,9 +295,11 @@ def write_geojson(path: Path, data: dict) -> int:
 
 def main():
     counts = {
-        "roads": write_geojson(DATA / "axis-roads.geojson", convert_roads()),
+        "stormwater": write_geojson(DATA / "axis-stormwater.geojson", convert_stormwater()),
+        "roads": write_geojson(DATA / "axis-roads.geojson", convert_axis_roads()),
         "lighting": write_geojson(DATA / "axis-lighting.geojson", convert_lighting()),
         "signs": write_geojson(DATA / "axis-signs.geojson", convert_signs()),
+        "bridges": write_geojson(DATA / "axis-bridges.geojson", convert_bridges()),
     }
     print(counts)
 
