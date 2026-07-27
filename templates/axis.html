@@ -55,29 +55,12 @@
     <div class="chip-group">
       <span class="chip-label">الطبقات</span>
       <div class="chips">
-        <button class="chip" :class="{active: showStormwater}" style="--chip:#22d3ee" @click="showStormwater = !showStormwater"><i class="dot"></i>السيول</button>
         <button class="chip" :class="{active: showRoads}" style="--chip:#38bdf8" @click="showRoads = !showRoads"><i class="dot"></i>الطرق</button>
         <button class="chip" :class="{active: showBridges}" style="--chip:#c084fc" @click="showBridges = !showBridges"><i class="dot"></i>الجسور</button>
         <button class="chip" :class="{active: showLighting}" style="--chip:#fbbf24" @click="showLighting = !showLighting"><i class="dot"></i>الإنارة</button>
         <button class="chip" :class="{active: showSigns}" style="--chip:#fb923c" @click="showSigns = !showSigns"><i class="dot"></i>اللوحات الإرشادية</button>
       </div>
     </div>
-    <template v-if="showStormwater">
-      <div class="filter-field">
-        <label>البلدية</label>
-        <select v-model="aMunicipality">
-          <option value="">الكل</option>
-          <option v-for="m in axisMunicipalities" :key="m" :value="m">{{ m }}</option>
-        </select>
-      </div>
-      <div class="filter-field">
-        <label>الحي</label>
-        <select v-model="aDistrict">
-          <option value="">الكل</option>
-          <option v-for="d in axisDistricts" :key="d" :value="d">{{ d }}</option>
-        </select>
-      </div>
-    </template>
     <div class="filter-actions">
       <button class="count-chip" @click="zoomToAxis" title="تقريب على العناصر المعروضة">
         <span>العناصر</span>
@@ -91,7 +74,7 @@
 
 <script src="/static/js/leaflet.js"></script>
 <script src="/static/js/vue.global.prod.js"></script>
-<script src="/static/js/axis.js?v=6"></script>
+<script src="/static/js/axis.js?v=7"></script>
 </body>
 </html>
 {% endverbatim %}

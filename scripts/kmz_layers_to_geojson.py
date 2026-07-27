@@ -1,4 +1,4 @@
-"""Convert axis KMZ layers (stormwater, roads, lighting, signs) and export bridges."""
+"""Convert axis KMZ layers (roads, lighting, signs) and export bridges."""
 from __future__ import annotations
 
 import json
@@ -14,9 +14,6 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "static" / "data"
 NS = {"k": "http://www.opengis.net/kml/2.2"}
 
-STORMWATER_KMZ = Path(
-    r"C:\Users\Eng Abdelatif\Downloads\طريق الأمير محمد بن سلمانkmz\طريق الأمير محمد بن سلمانkmz.kmz"
-)
 AXIS_ROADS_KMZ = Path(
     r"C:\Users\Eng Abdelatif\Downloads\محور الامير محمد بن سلمان.kmz"
 )
@@ -27,8 +24,6 @@ SIGNS_KMZ = Path(
     r"C:\Users\Eng Abdelatif\Downloads\اللوحات الارشادية طريق الامير محمد بن سلمان (1).kmz"
 )
 
-STORMWATER_STREET = "طريق جدة_مكة"
-STORMWATER_COLOR = "#22d3ee"
 ROADS_COLOR = "#38bdf8"
 LIGHTING_LINE_COLOR = "#fbbf24"
 LIGHTING_POINT_COLOR = "#fde047"
@@ -128,46 +123,6 @@ def polygon_rings(pm) -> list[list[list[float]]]:
                 ring.append(ring[0])
             rings.append(ring)
     return rings
-
-
-def convert_stormwater() -> dict:
-    kml = read_kml(STORMWATER_KMZ)
-    root = ET.fromstring(kml.encode("utf-8"))
-    features = []
-    for pm in root.findall(".//k:Placemark", NS):
-        name_el = pm.find("k:name", NS)
-        street = (name_el.text or "").strip()
-        if street != STORMWATER_STREET:
-            continue
-        desc_el = pm.find("k:description", NS)
-        attrs = parse_description(desc_el.text if desc_el is not None else "")
-        line = pm.find(".//k:LineString/k:coordinates", NS)
-        if line is None or not line.text:
-            continue
-        coords = parse_coords(line.text)
-        if len(coords) < 2:
-            continue
-        props = {
-            "layer": "stormwater",
-            "name": street,
-            "segment_code": attrs.get("رمز المقطع", ""),
-            "from_street": attrs.get("من الشارع", ""),
-            "to_street": attrs.get("الى الشارع", ""),
-            "municipality": attrs.get("اسم البلدية باللغة العربية", ""),
-            "district": attrs.get("اسم الحي باللغة العربية", ""),
-            "sub_district": attrs.get("اسم الحي الفرعي باللغة العربية", ""),
-            "length_m": attrs.get("طول المقطع", ""),
-            "width_m": attrs.get("عرض المقطع", ""),
-            "color": STORMWATER_COLOR,
-        }
-        features.append(
-            {
-                "type": "Feature",
-                "geometry": {"type": "LineString", "coordinates": coords},
-                "properties": props,
-            }
-        )
-    return {"type": "FeatureCollection", "features": features}
 
 
 def convert_axis_roads() -> dict:
@@ -295,7 +250,6 @@ def write_geojson(path: Path, data: dict) -> int:
 
 def main():
     counts = {
-        "stormwater": write_geojson(DATA / "axis-stormwater.geojson", convert_stormwater()),
         "roads": write_geojson(DATA / "axis-roads.geojson", convert_axis_roads()),
         "lighting": write_geojson(DATA / "axis-lighting.geojson", convert_lighting()),
         "signs": write_geojson(DATA / "axis-signs.geojson", convert_signs()),
