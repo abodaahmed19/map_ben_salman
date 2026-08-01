@@ -1,0 +1,10 @@
+size=199420
+LineString=0
+Point=0
+Placemarks=26
+unique names (4): ["", "ام القرى", "قطاعات_المحور_حتي_ام_القري", "مكة - جدة السريع"]
+sample0: other name=مكة - جدة السريع pts=63
+sample1: other name=مكة - جدة السريع pts=67
+sample2: other name=مكة - جدة السريع pts=123
+sample3: other name=مكة - جدة السريع pts=118
+sample4: other name=مكة - جدة السريع pts=147

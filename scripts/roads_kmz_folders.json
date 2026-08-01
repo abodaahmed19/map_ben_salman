@@ -1,0 +1,113 @@
+{
+  "folders": [
+    {
+      "path": "Prince Mohammed Bin Salman Road",
+      "folder_name": "Prince Mohammed Bin Salman Road",
+      "placemark_count": 253,
+      "geometry_types": {
+        "Point": 84,
+        "LineString": 85,
+        "Polygon": 84
+      },
+      "name_samples": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15"
+      ]
+    },
+    {
+      "path": "Prince Mohammed Bin Salman Road / الأحداثيات",
+      "folder_name": "الأحداثيات",
+      "placemark_count": 84,
+      "geometry_types": {
+        "Point": 84
+      },
+      "name_samples": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15"
+      ]
+    },
+    {
+      "path": "Prince Mohammed Bin Salman Road / البردورات",
+      "folder_name": "البردورات",
+      "placemark_count": 85,
+      "geometry_types": {
+        "LineString": 85
+      },
+      "name_samples": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15"
+      ]
+    },
+    {
+      "path": "Prince Mohammed Bin Salman Road / الأرصفة",
+      "folder_name": "الأرصفة",
+      "placemark_count": 84,
+      "geometry_types": {
+        "Polygon": 84
+      },
+      "name_samples": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15"
+      ]
+    }
+  ],
+  "total_in_folders": 506,
+  "all_folder_paths": [
+    "Prince Mohammed Bin Salman Road",
+    "Prince Mohammed Bin Salman Road / الأحداثيات",
+    "Prince Mohammed Bin Salman Road / الأرصفة",
+    "Prince Mohammed Bin Salman Road / البردورات"
+  ]
+}

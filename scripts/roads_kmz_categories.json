@@ -1,0 +1,154 @@
+{
+  "Prince Mohammed Bin Salman Road.kmz": {
+    "document_name": "",
+    "placemark_count": 253,
+    "folder_names": [
+      "Prince Mohammed Bin Salman Road",
+      "الأرصفة",
+      "البردورات"
+    ],
+    "unique_name_count": 94,
+    "non_numeric_names_sample": [],
+    "non_numeric_name_count": 0,
+    "style_ids": {
+      "#LineStyle20": 85,
+      "#IconStyle10": 84,
+      "#PolyStyle30": 84
+    },
+    "meaningful_fields": {
+      "اسم الطريق": {
+        "طريق الأمير محمد بن سلمان": 85
+      },
+      "اسم_الطريق": {
+        "طريق الأمير محمد بن سلمان": 84
+      }
+    },
+    "keyword_hits": {}
+  },
+  "اللوحات_التحذيرية.kmz": {
+    "document_name": "اللوحات التحذيرية",
+    "placemark_count": 200,
+    "folder_names": [],
+    "unique_name_count": 127,
+    "non_numeric_names_sample": [
+      "MBS-WARN-0001",
+      "MBS-WARN-0002",
+      "MBS-WARN-0003",
+      "MBS-WARN-0004",
+      "MBS-WARN-0005",
+      "MBS-WARN-0006",
+      "MBS-WARN-0007",
+      "MBS-WARN-0008",
+      "MBS-WARN-0009",
+      "MBS-WARN-0010",
+      "MBS-WARN-0011",
+      "MBS-WARN-0012",
+      "MBS-WARN-0013",
+      "MBS-WARN-0014",
+      "MBS-WARN-0015",
+      "MBS-WARN-0016",
+      "MBS-WARN-0017",
+      "MBS-WARN-0018",
+      "MBS-WARN-0019",
+      "MBS-WARN-0020",
+      "MBS-WARN-0021",
+      "MBS-WARN-0022",
+      "MBS-WARN-0023",
+      "MBS-WARN-0024",
+      "MBS-WARN-0025",
+      "MBS-WARN-0026",
+      "MBS-WARN-0027",
+      "MBS-WARN-0028",
+      "MBS-WARN-0029",
+      "MBS-WARN-0030",
+      "MBS-WARN-0031",
+      "MBS-WARN-0032",
+      "MBS-WARN-0033",
+      "MBS-WARN-0034",
+      "MBS-WARN-0035",
+      "MBS-WARN-0036",
+      "MBS-WARN-0037",
+      "MBS-WARN-0038",
+      "MBS-WARN-0039",
+      "MBS-WARN-0040",
+      "MBS-WARN-0041",
+      "MBS-WARN-0042",
+      "MBS-WARN-0043",
+      "MBS-WARN-0044",
+      "MBS-WARN-0045",
+      "MBS-WARN-0046",
+      "MBS-WARN-0047",
+      "MBS-WARN-0048",
+      "MBS-WARN-0049",
+      "MBS-WARN-0050"
+    ],
+    "non_numeric_name_count": 127,
+    "style_ids": {},
+    "meaningful_fields": {
+      "فئة الأصل": {
+        "السلامة المرورية": 200
+      },
+      "نوع الأصل": {
+        "لوحات تحذيرية": 200
+      },
+      "نوع الهندسة": {
+        "نقطة": 200
+      },
+      "طريقة التمثيل": {
+        "نقطة": 127,
+        "أصل نقطي": 73
+      },
+      "الوحدة": {
+        "نقطة": 127,
+        "عدد": 73
+      },
+      "الكمية": {
+        "1": 200
+      },
+      "رقم اللوحة / المجموعة": {
+        "None": 200
+      },
+      "عدد نقاط المسار / النقاط المرجعية": {
+        "1": 200
+      },
+      "ارتفاع العمود (م)": {
+        "None": 200
+      },
+      "عدد الفوانيس": {
+        "None": 200
+      },
+      "قدرة الكشاف (واط)": {
+        "None": 200
+      },
+      "الحالة الفنية": {
+        "غير محدد": 200
+      }
+    },
+    "keyword_hits": {
+      "نوع": [
+        "MBS-WARN-0001",
+        "MBS-WARN-0002",
+        "MBS-WARN-0003",
+        "MBS-WARN-0004",
+        "MBS-WARN-0005",
+        "MBS-WARN-0006",
+        "MBS-WARN-0007",
+        "MBS-WARN-0008",
+        "MBS-WARN-0009",
+        "MBS-WARN-0010"
+      ],
+      "فئة": [
+        "MBS-WARN-0001",
+        "MBS-WARN-0002",
+        "MBS-WARN-0003",
+        "MBS-WARN-0004",
+        "MBS-WARN-0005",
+        "MBS-WARN-0006",
+        "MBS-WARN-0007",
+        "MBS-WARN-0008",
+        "MBS-WARN-0009",
+        "MBS-WARN-0010"
+      ]
+    }
+  }
+}

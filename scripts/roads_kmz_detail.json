@@ -1,0 +1,392 @@
+{
+  "segment_count": 94,
+  "geometry_combos_per_segment": {
+    "LineString+Point+Polygon": 73,
+    "LineString+Point": 9,
+    "Point+Polygon": 1,
+    "Point": 1,
+    "LineString+Polygon": 3,
+    "Polygon": 7
+  },
+  "useful_attribute_values": [
+    {
+      "field": "اسم الطريق",
+      "value": "طريق الأمير محمد بن سلمان",
+      "count": 85
+    },
+    {
+      "field": "اسم_الطريق",
+      "value": "طريق الأمير محمد بن سلمان",
+      "count": 84
+    },
+    {
+      "field": "الطول",
+      "value": "255.767575",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "160.110646",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "1119.49642",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "104.266085",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "277.607498",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "174.418547",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "67.538065",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "85.90603",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "176.29515",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "128.121884",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "4578.076432",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "344.039887",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "228.424759",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "150.553646",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "121.135964",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "109.434035",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "187.160347",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "51.752793",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "44.016529",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "23.045522",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "75.116369",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "79.085962",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "64.572026",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "61.304367",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "44.130504",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "31.70653",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "146.272017",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "39.052384",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "45.39577",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "53.927394",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "120.988616",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "71.019151",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "30.693281",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "32.377216",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "24.635136",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "86.227574",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "260.765352",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "75.048978",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "133.601957",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "79.544463",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "94.925164",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "140.136759",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "784.560173",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "55.037708",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "68.156901",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "130.377852",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "23.021401",
+      "count": 1
+    },
+    {
+      "field": "الطول",
+      "value": "112.206685",
+      "count": 1
+    }
+  ],
+  "sample_segment_1": [
+    {
+      "geom": "Point",
+      "style": "#IconStyle10",
+      "attrs": {
+        "1 SHAPE": "Point",
+        "Start_X": "585174.699593",
+        "Start_Y": "2369064.577738"
+      }
+    },
+    {
+      "geom": "LineString",
+      "style": "#LineStyle20",
+      "attrs": {
+        "1 SHAPE": "PolyLine",
+        "اسم الطريق": "طريق الأمير محمد بن سلمان",
+        "الطول": "255.767575",
+        "Start_X": "585169.498",
+        "START_Y": "2369059.3271",
+        "END_X": "584999.9428",
+        "END_Y": "2369228.312"
+      }
+    },
+    {
+      "geom": "Polygon",
+      "style": "#PolyStyle30",
+      "attrs": {
+        "1 SHAPE": "Polygon",
+        "اسم_الطريق": "طريق الأمير محمد بن سلمان",
+        "Start_X": "585131.5159",
+        "Start_Y": "2369104.506394",
+        "END_X": "585131.5159",
+        "END_Y": "2369074.4088"
+      }
+    }
+  ],
+  "line_only_attrs_keys": [
+    "1 SHAPE",
+    "10 SHAPE",
+    "11 SHAPE",
+    "12 SHAPE",
+    "13 SHAPE",
+    "14 SHAPE",
+    "15 SHAPE",
+    "16 SHAPE",
+    "17 SHAPE",
+    "18 SHAPE",
+    "19 SHAPE",
+    "2 SHAPE",
+    "20 SHAPE",
+    "21 SHAPE",
+    "22 SHAPE",
+    "23 SHAPE",
+    "24 SHAPE",
+    "25 SHAPE",
+    "26 SHAPE",
+    "27 SHAPE",
+    "28 SHAPE",
+    "29 SHAPE",
+    "3 SHAPE",
+    "30 SHAPE",
+    "31 SHAPE",
+    "32 SHAPE",
+    "33 SHAPE",
+    "34 SHAPE",
+    "35 SHAPE",
+    "36 SHAPE",
+    "37 SHAPE",
+    "38 SHAPE",
+    "39 SHAPE",
+    "4 SHAPE",
+    "40 SHAPE",
+    "41 SHAPE",
+    "42 SHAPE",
+    "43 SHAPE",
+    "44 SHAPE",
+    "45 SHAPE",
+    "46 SHAPE",
+    "47 SHAPE",
+    "48 SHAPE",
+    "49 SHAPE",
+    "5 SHAPE",
+    "50 SHAPE",
+    "51 SHAPE",
+    "52 SHAPE",
+    "53 SHAPE",
+    "54 SHAPE",
+    "55 SHAPE",
+    "56 SHAPE",
+    "57 SHAPE",
+    "58 SHAPE",
+    "59 SHAPE",
+    "6 SHAPE",
+    "60 SHAPE",
+    "61 SHAPE",
+    "62 SHAPE",
+    "63 SHAPE",
+    "64 SHAPE",
+    "65 SHAPE",
+    "66 SHAPE",
+    "67 SHAPE",
+    "68 SHAPE",
+    "69 SHAPE",
+    "7 SHAPE",
+    "70 SHAPE",
+    "71 SHAPE",
+    "72 SHAPE",
+    "73 SHAPE",
+    "74 SHAPE",
+    "76 SHAPE",
+    "77 SHAPE",
+    "78 SHAPE",
+    "79 SHAPE",
+    "8 SHAPE",
+    "80 SHAPE",
+    "81 SHAPE",
+    "83 SHAPE",
+    "84 SHAPE",
+    "85 SHAPE",
+    "86 SHAPE",
+    "87 SHAPE",
+    "9 SHAPE",
+    "END_X",
+    "END_Y",
+    "START_Y",
+    "Start_X",
+    "اسم الطريق",
+    "الطول"
+  ]
+}
