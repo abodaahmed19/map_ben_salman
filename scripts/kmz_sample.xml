@@ -1,157 +1,0 @@
-<Placemark id="ID_00000">
-      <name>مكة - جدة السريع</name>
-      <Snippet></Snippet>
-      <description><![CDATA[<html xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:msxsl="urn:schemas-microsoft-com:xslt">
-<head>
-<META http-equiv="Content-Type" content="text/html">
-<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-</head>
-<body style="margin:0px 0px 0px 0px;overflow:auto;background:#FFFFFF;">
-<table style="font-family:Arial,Verdana,Times;font-size:12px;text-align:left;width:100%;border-collapse:collapse;padding:3px 3px 3px 3px">
-<tr style="text-align:center;font-weight:bold;background:#9CBCE2">
-<td>مكة - جدة السريع</td>
-</tr>
-<tr>
-<td>
-<table style="font-family:Arial,Verdana,Times;font-size:12px;text-align:left;width:100%;border-spacing:0px; padding:3px 3px 3px 3px">
-<tr>
-<td>FID</td>
-<td>0</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>SEC_ID</td>
-<td>1416</td>
-</tr>
-<tr>
-<td>MAIN_ST_ID</td>
-<td>487</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>MUNICIPALI</td>
-<td>الحديبية</td>
-</tr>
-<tr>
-<td>MUNICIPA_1</td>
-<td>AlUtaibeyah</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>Type</td>
-<td>Main Axis</td>
-</tr>
-<tr>
-<td>Road_Name</td>
-<td>مكة - جدة السريع</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>Global_ID</td>
-<td>A-1416</td>
-</tr>
-<tr>
-<td>District_N</td>
-<td>حي الحمراء</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>Status</td>
-<td></td>
-</tr>
-<tr>
-<td>PCI</td>
-<td>0</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>Sectors</td>
-<td>4</td>
-</tr>
-<tr>
-<td>State_of_s</td>
-<td>صيـــــانة جزئيــة</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>No_Mainten</td>
-<td></td>
-</tr>
-<tr>
-<td>Year_Maint</td>
-<td>0</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>comments</td>
-<td>صيانة الطرق المستلمة حديثا عقد رقم 240201118218 لسنة 2024</td>
-</tr>
-<tr>
-<td>التوا</td>
-<td>متوافق</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>حالة_</td>
-<td>نع</td>
-</tr>
-<tr>
-<td>True_Lengh</td>
-<td>2920.600741</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>M_R</td>
-<td>0</td>
-</tr>
-<tr>
-<td>تعميد</td>
-<td></td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>OVERLAY</td>
-<td>0</td>
-</tr>
-<tr>
-<td>تعمي_1</td>
-<td>0</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>نطاقا</td>
-<td>غرب</td>
-</tr>
-<tr>
-<td>تنظيم</td>
-<td>تنظيمي</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>New_Global</td>
-<td></td>
-</tr>
-<tr>
-<td>New_Glob_1</td>
-<td>0</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>حالة1</td>
-<td></td>
-</tr>
-<tr>
-<td>X</td>
-<td>579360.38723</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>Y</td>
-<td>2368314.80351</td>
-</tr>
-<tr>
-<td>Road_Width</td>
-<td>0</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>RATE</td>
-<td>0</td>
-</tr>
-<tr>
-<td>SHAPE_Leng</td>
-<td>6425.32163</td>
-</tr>
-<tr bgcolor="#D4E4F3">
-<td>SHAPE_Area</td>
-<td>63101.581478</td>
-</tr>
-<tr>
-<td>تصنيف</td>
-<td>طرق سريعة</td>
-</tr>
-<tr bgcolor="#D4E4F
